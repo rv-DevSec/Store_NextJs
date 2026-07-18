@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { getAdminOrders, updateOrderStatus, adminDeleteOrder } from '@/services/orderService';
 import { formatPrice, toPersianNumber, formatDateTime } from '@/lib/utils/numbers';
 
@@ -30,6 +31,7 @@ const paymentStatusColors: Record<string, string> = {
 
 const AdminOrders = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -90,6 +92,7 @@ const AdminOrders = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-right px-4 py-3 font-medium">کد سفارش</th>
                 <th className="text-right px-4 py-3 font-medium">کاربر</th>
                 <th className="text-right px-4 py-3 font-medium">مبلغ</th>
                 <th className="text-right px-4 py-3 font-medium">وضعیت</th>
@@ -101,51 +104,30 @@ const AdminOrders = () => {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order: { _id: string; user?: { name: string }; totalAmount: number; status: string; paymentMethod?: string; paymentStatus: string; paymentInfo?: { receiptImage?: string; transactionId?: string }; trackingCode?: string; createdAt: string }) => {
+              {orders.map((order: { _id: string; orderId?: string; user?: { name: string }; totalAmount: number; status: string; paymentMethod?: string; paymentStatus: string; paymentInfo?: { receiptImage?: string; transactionId?: string }; trackingCode?: string; createdAt: string }) => {
                 const displayStatus = getStatus(order._id, order.status);
                 const displayPayment = getPayment(order._id, order.paymentStatus);
                 return (
-                  <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <tr key={order._id} onClick={() => router.push(`/admin/orders/${order._id}`)}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer">
+                    <td className="px-4 py-3 font-medium text-xs font-mono" dir="ltr">{order.orderId || order._id.slice(-8).toUpperCase()}</td>
                     <td className="px-4 py-3 font-medium">{order.user?.name || 'کاربر'}</td>
                     <td className="px-4 py-3">{formatPrice(order.totalAmount)}</td>
                     <td className="px-4 py-3">
-                      <select value={displayStatus} onChange={(e) => {
-                        const newStatus = e.target.value;
-                        setLocalStatus((prev) => ({ ...prev, [order._id]: newStatus }));
-                        updateMutation.mutate({ id: order._id, status: newStatus });
-                      }}
-                        className={`px-2 py-1 border rounded text-xs font-medium ${
-                          displayStatus === 'delivered' ? 'bg-success/10 text-success border-success/30' :
-                          displayStatus === 'cancelled' ? 'bg-danger/10 text-danger border-danger/30' :
-                          displayStatus === 'shipped' ? 'bg-info/10 text-info border-info/30' :
-                          'bg-warning/10 text-warning border-warning/30'
-                        }`}>
-                        {statuses.map((key) => (
-                          <option key={key} value={key} className="text-gray-800 bg-white">{statusLabel[key]}</option>
-                        ))}
-                      </select>
+                      <span className={`px-2 py-1 border rounded text-xs font-medium ${
+                        displayStatus === 'delivered' ? 'bg-success/10 text-success border-success/30' :
+                        displayStatus === 'cancelled' ? 'bg-danger/10 text-danger border-danger/30' :
+                        displayStatus === 'shipped' ? 'bg-info/10 text-info border-info/30' :
+                        'bg-warning/10 text-warning border-warning/30'
+                      }`}>
+                        {statusLabel[displayStatus] || displayStatus}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-xs">{paymentMethodLabel[order.paymentMethod || ''] || order.paymentMethod || '—'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <select value={displayPayment} onChange={(e) => {
-                          const newPayment = e.target.value;
-                          setLocalPayment((prev) => ({ ...prev, [order._id]: newPayment }));
-                          updateMutation.mutate({ id: order._id, paymentStatus: newPayment });
-                        }}
-                          className={`px-2 py-1 border rounded text-xs font-medium ${paymentStatusColors[displayPayment] || 'bg-gray-100'}`}>
-                          {paymentStatuses.map((key) => (
-                            <option key={key} value={key} className="text-gray-800 bg-white">{paymentStatusLabel[key]}</option>
-                          ))}
-                        </select>
-                        {order.paymentInfo?.receiptImage && (
-                          <a href={order.paymentInfo.receiptImage} target="_blank" rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline">مشاهده رسید</a>
-                        )}
-                        {order.paymentInfo?.transactionId && (
-                          <span className="text-xs text-gray-500" dir="ltr">کد: {order.paymentInfo.transactionId}</span>
-                        )}
-                      </div>
+                      <span className={`px-2 py-1 border rounded text-xs font-medium ${paymentStatusColors[displayPayment] || 'bg-gray-100'}`}>
+                        {paymentStatusLabel[displayPayment] || displayPayment}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       {order.trackingCode ? (
@@ -156,14 +138,14 @@ const AdminOrders = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDateTime(order.createdAt)}</td>
                     <td className="px-4 py-3 text-left">
-                      <button onClick={() => { if (confirm('حذف شود؟')) deleteMutation.mutate(order._id); }}
+                      <button onClick={(e) => { e.stopPropagation(); if (confirm('حذف شود؟')) deleteMutation.mutate(order._id); }}
                         className="text-xs px-2 py-1 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
                     </td>
                   </tr>
                 );
               })}
               {orders.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-500">سفارشی یافت نشد</td></tr>
+                <tr><td colSpan={9} className="text-center py-8 text-gray-500">سفارشی یافت نشد</td></tr>
               )}
             </tbody>
           </table>

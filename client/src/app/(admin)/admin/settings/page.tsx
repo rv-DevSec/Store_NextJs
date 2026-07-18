@@ -8,7 +8,7 @@ import api from '@/lib/api';
 const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) => {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
-    phone: (s.phone as string) || '',
+    phones: Array.isArray(s.phones) ? (s.phones as string[]) : (s.phone ? [s.phone as string] : []),
     email: (s.email as string) || '',
     address: (s.address as string) || '',
     about: (s.about as string) || '',
@@ -17,7 +17,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     cardToCardActive: !!((s.cardToCard as Record<string, unknown>)?.active),
     cardToCardBankName: (s.cardToCard as Record<string, unknown>)?.bankName as string || '',
     cardToCardCardNumber: (s.cardToCard as Record<string, unknown>)?.cardNumber as string || '',
-    cardToCardCardHolder: (s.cardToCard as Record<string, unknown>)?.cardHolder as string || '',
+    cardToCardCardHolder: (s.cardToCard as Record<string, unknown>)?.accountHolder as string || '',
     shippingPrice: String(s.shippingPrice || ''),
   });
 
@@ -35,15 +35,26 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handlePhoneChange = (index: number, value: string) => {
+    setForm((prev) => {
+      const phones = [...prev.phones];
+      phones[index] = value;
+      return { ...prev, phones };
+    });
+  };
+
+  const addPhone = () => setForm((prev) => ({ ...prev, phones: [...prev.phones, ''] }));
+  const removePhone = (index: number) => setForm((prev) => ({ ...prev, phones: prev.phones.filter((_, i) => i !== index) }));
+
   const handleSubmit = () => {
     saveMutation.mutate({
-      phone: form.phone, email: form.email, address: form.address, about: form.about,
+      phones: form.phones.filter(p => p.trim()), email: form.email, address: form.address, about: form.about,
       shippingPrice: form.shippingPrice ? Number(form.shippingPrice) : undefined,
       zarinpalMerchantId: form.zarinpalMerchantId,
       zarinpal: { enabled: form.zarinpalEnabled },
       cardToCard: {
         active: form.cardToCardActive, bankName: form.cardToCardBankName,
-        cardNumber: form.cardToCardCardNumber, cardHolder: form.cardToCardCardHolder,
+        cardNumber: form.cardToCardCardNumber, accountHolder: form.cardToCardCardHolder,
       },
     });
   };
@@ -54,9 +65,21 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">تلفن</label>
-            <input type="text" name="phone" value={form.phone} onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            <label className="block text-xs text-gray-500 mb-1">شماره تلفن‌ها</label>
+            <div className="space-y-2">
+              {form.phones.map((phone, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input type="text" value={phone} onChange={(e) => handlePhoneChange(idx, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+                  {form.phones.length > 1 && (
+                    <button type="button" onClick={() => removePhone(idx)}
+                      className="px-2 py-2 text-danger hover:bg-danger/10 rounded-lg transition text-sm">حذف</button>
+                  )}
+                </div>
+              ))}
+              <button type="button" onClick={addPhone}
+                className="text-primary text-sm hover:underline">+ افزودن شماره</button>
+            </div>
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">ایمیل</label>

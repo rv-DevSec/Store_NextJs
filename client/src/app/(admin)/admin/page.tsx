@@ -5,6 +5,10 @@ import { getAdminStats, getAdminOrders, getAdminProducts } from '@/services/orde
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import Link from 'next/link';
 
+const statusLabel: Record<string, string> = {
+  pending: 'در انتظار', processing: 'در حال پردازش', shipped: 'ارسال شده', delivered: 'تحویل شده', cancelled: 'لغو شده',
+};
+
 const AdminDashboard = () => {
   const { data: statsData } = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats });
   const { data: recentOrders } = useQuery({ queryKey: ['admin-orders-recent'], queryFn: () => getAdminOrders({ limit: '5', page: '1' }) });
@@ -46,7 +50,7 @@ const AdminDashboard = () => {
                   <p className="text-sm font-medium">{order.user?.name || 'کاربر'}</p>
                   <p className="text-xs text-gray-500">{formatPrice(order.totalAmount)}</p>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-lg bg-gray-100">{order.status}</span>
+                <span className="text-xs px-2 py-1 rounded-lg bg-gray-100">{statusLabel[order.status] || order.status}</span>
               </Link>
             ))}
           </div>

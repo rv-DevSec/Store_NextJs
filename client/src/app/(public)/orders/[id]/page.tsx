@@ -1,8 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderById, downloadInvoice } from '@/services/orderService';
+import { getOrderById, downloadInvoice, updateOrderPaymentInfo } from '@/services/orderService';
+import { getSettings } from '@/services/productService';
 import { formatPrice, toPersianNumber, formatDateTime } from '@/lib/utils/numbers';
 import SEO from '@/components/common/SEO';
 import type { IOrder } from '@/types';
@@ -52,13 +54,34 @@ const OrderDetail = () => {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const queryClient = useQueryClient();
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['order', id],
     queryFn: () => getOrderById(id),
   });
 
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+  });
+
   const order: IOrder | undefined = data?.order;
+  const settings = settingsData?.settings;
+
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!receiptFile) throw new Error('no file');
+      const formData = new FormData();
+      formData.append('receipt', receiptFile);
+      return updateOrderPaymentInfo(id, formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', id] });
+      setReceiptFile(null);
+    },
+  });
 
   if (isLoading) {
     return (
@@ -83,6 +106,8 @@ const OrderDetail = () => {
   const statusKey = isSellerOrder ? (order.sellerStatus || 'in_progress') : order.status;
   const statCol = isSellerOrder ? sellerStatusColors : statusColors;
   const statLbl = isSellerOrder ? sellerStatusLabels : statusLabels;
+  const isCardToCard = order.paymentMethod === 'card-to-card';
+  const cc = settings?.cardToCard;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -113,7 +138,9 @@ const OrderDetail = () => {
         {!isSellerOrder && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">پرداخت</span>
-            <span className="text-sm">{paymentLabels[order.paymentStatus] || order.paymentStatus}</span>
+            <span className={`text-sm ${order.paymentStatus === 'paid' ? 'text-success font-medium' : ''}`}>
+              {paymentLabels[order.paymentStatus] || order.paymentStatus}
+            </span>
           </div>
         )}
         {order.trackingCode && (
@@ -129,6 +156,45 @@ const OrderDetail = () => {
           </div>
         )}
       </div>
+
+      {isCardToCard && order.paymentStatus === 'pending' && cc?.active && (
+        <div className="bg-white border border-blue-200 rounded-xl p-4 mb-4">
+          <h3 className="font-bold mb-3 text-blue-800">پرداخت کارت به کارت</h3>
+          <div className="text-sm space-y-2 mb-4">
+            <p><span className="text-gray-500">بانک: </span>{cc.bankName}</p>
+            <p><span className="text-gray-500">شماره کارت: </span><span dir="ltr" className="font-medium text-lg tracking-wider">{cc.cardNumber}</span></p>
+            <p><span className="text-gray-500">صاحب حساب: </span>{cc.accountHolder}</p>
+          </div>
+          <div className="border-t border-blue-100 pt-4">
+            <p className="text-sm text-gray-600 mb-2">پس از واریز، تصویر رسید را آپلود کنید:</p>
+            <input type="file" accept="image/jpeg,image/png" onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+              className="w-full text-sm file:ml-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition" />
+            {receiptFile && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-gray-500">{receiptFile.name}</span>
+                <button onClick={() => uploadMutation.mutate()} disabled={uploadMutation.isPending}
+                  className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark transition disabled:opacity-50">
+                  {uploadMutation.isPending ? 'در حال آپلود...' : 'آپلود رسید'}
+                </button>
+              </div>
+            )}
+            {uploadMutation.isSuccess && <p className="text-xs text-success mt-2">رسید با موفقیت آپلود شد. پس از تأیید مدیر، وضعیت پرداخت به‌روزرسانی می‌شود.</p>}
+            {uploadMutation.isError && <p className="text-xs text-danger mt-2">خطا در آپلود رسید. لطفاً مجدداً تلاش کنید.</p>}
+          </div>
+        </div>
+      )}
+
+      {isCardToCard && order.paymentInfo?.receiptImage && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+          <h3 className="font-bold mb-3">رسید پرداخت</h3>
+          <a href={order.paymentInfo.receiptImage} target="_blank" rel="noopener noreferrer">
+            <img src={order.paymentInfo.receiptImage} alt="رسید پرداخت" className="max-h-64 rounded-lg border border-gray-200" />
+          </a>
+          <p className="text-xs text-gray-500 mt-2">
+            {order.paymentStatus === 'paid' ? '✅ تأیید شده' : '⏳ در انتظار تأیید مدیر'}
+          </p>
+        </div>
+      )}
 
       {!isSellerOrder && order.shippingAddress && (
         <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">

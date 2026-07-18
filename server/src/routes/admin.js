@@ -82,7 +82,7 @@ router.delete('/orders/:id', [
 router.get('/users', getAdminUsers);
 router.put('/users/:id', [
   param('id').isMongoId().withMessage('شناسه کاربر نامعتبر است'),
-  body('role').optional().isIn(['user', 'admin']).withMessage('نقش نامعتبر است'),
+  body('role').optional().isIn(['user', 'admin', 'seller']).withMessage('نقش نامعتبر است'),
   body('isActive').optional().isBoolean().withMessage('مقدار فعال/غیرفعال نامعتبر است'),
   validate,
 ], updateUser);

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { IUser } from '@/types';
@@ -33,11 +33,66 @@ const getInitialUser = (): IUser | null => {
   return null;
 };
 
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(getInitialUser);
+  const [user, setUser] = useState<IUser | null>(null);
+  const [ready, setReady] = useState(false);
   const queryClient = useQueryClient();
 
-  const loading = typeof window !== 'undefined' && !localStorage.getItem('token') ? false : !user;
+  useEffect(() => {
+    const init = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = getInitialUser();
+
+      if (!token || !storedUser) {
+        setReady(true);
+        return;
+      }
+
+      if (!isTokenExpired(token)) {
+        setUser(storedUser);
+        setReady(true);
+        return;
+      }
+
+      try {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (!storedRefreshToken) throw new Error('no refresh token');
+
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        });
+
+        if (!res.ok) throw new Error('refresh failed');
+
+        const data = await res.json();
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        setUser(storedUser);
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      } finally {
+        setReady(true);
+      }
+    };
+
+    init();
+  }, []);
+
+  const loading = !ready;
 
   const handleAuthResponse = (data: { user: IUser; token: string; refreshToken?: string }) => {
     queryClient.clear();

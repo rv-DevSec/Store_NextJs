@@ -10,6 +10,6 @@ module.exports = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || '',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   nodeEnv: process.env.NODE_ENV || 'development',
 };

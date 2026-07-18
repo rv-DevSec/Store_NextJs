@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const siteSettingsSchema = new mongoose.Schema({
   headerImage: { type: String, default: '' },
+  phones: [{ type: String }],
+  email: { type: String, default: '' },
+  address: { type: String, default: '' },
+  about: { type: String, default: '' },
+  shippingPrice: { type: Number, default: 0 },
+  zarinpalMerchantId: { type: String, default: '' },
   festival: {
     active: { type: Boolean, default: false },
     title: { type: String, default: 'فروش ویژه' },

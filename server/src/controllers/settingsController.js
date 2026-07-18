@@ -32,9 +32,10 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
-const ALLOWED_FIELDS = ['headerImage', 'festival', 'cardToCard', 'zarinpal'];
-const STRING_FIELDS = ['headerImage', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor'];
-const NUMERIC_FIELDS = ['products'];
+const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal'];
+const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor'];
+const ARRAY_FIELDS = ['phones'];
+const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 
 exports.updateSettings = async (req, res, next) => {
   try {
@@ -54,6 +55,10 @@ exports.updateSettings = async (req, res, next) => {
             else if (k === 'products' && Array.isArray(v)) sanitized[k] = v;
           }
           settings[key] = sanitized;
+        } else if (ARRAY_FIELDS.includes(key) && Array.isArray(val)) {
+          settings[key] = val.filter(v => typeof v === 'string');
+        } else if (NUMERIC_FIELDS.includes(key) && typeof val === 'number') {
+          settings[key] = val;
         } else if (typeof val === 'string') {
           settings[key] = val;
         }

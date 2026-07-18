@@ -224,7 +224,7 @@ export const deleteAddress = async (id: string) => {
   return data;
 };
 
-export const updateOrderPaymentInfo = async (orderId: string, formData: Record<string, unknown>) => {
+export const updateOrderPaymentInfo = async (orderId: string, formData: Record<string, unknown> | FormData) => {
   const { data } = await api.put(`/orders/${orderId}/payment-info`, formData);
   return data;
 };

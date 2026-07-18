@@ -24,7 +24,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   }, [onClose]);
 
   return (
-    <div className="fixed bottom-6 left-6 z-[60] animate-toast-in">
+    <div className="fixed bottom-6 right-6 z-[60] animate-toast-in">
       <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-white text-sm font-medium ${
         type === 'success' ? 'bg-success' : 'bg-danger'
       }`}>

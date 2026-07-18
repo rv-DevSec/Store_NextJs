@@ -76,6 +76,7 @@ exports.getAdminOrders = async (req, res, next) => {
         { 'shippingAddress.fullName': { $regex: safe, $options: 'i' } },
         { 'shippingAddress.phone': { $regex: safe, $options: 'i' } },
         { trackingCode: { $regex: safe, $options: 'i' } },
+        { orderId: { $regex: safe, $options: 'i' } },
         ...(isObjectId ? [{ _id: search }] : []),
       ];
     }
@@ -150,6 +151,11 @@ exports.updateOrderStatus = async (req, res, next) => {
     if (status) update.status = status;
     if (paymentStatus) update.paymentStatus = paymentStatus;
     if (transactionId) update['paymentInfo.transactionId'] = transactionId;
+
+    if (paymentStatus === 'paid' && existing.paymentStatus !== 'paid' && !existing.orderId) {
+      const gen = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+      update.orderId = `ORD-${gen()}`;
+    }
 
     if (existing.trackingCode) {
       // never change an existing tracking code

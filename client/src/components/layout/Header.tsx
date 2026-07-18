@@ -83,7 +83,7 @@ const Header = () => {
                 </button>
 
                 {cartOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 animate-scale-in origin-top-left">
+                  <div className="absolute left-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-200 z-50 animate-scale-in origin-top-left max-h-[calc(100vh-6rem)] overflow-y-auto">
                     <div className="p-4">
                       <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold">سبد خرید ({toPersianNumber(totalItems)})</h3>
@@ -267,6 +267,12 @@ const Header = () => {
                 { to: '/', label: 'خانه' },
                 { to: '/products', label: 'محصولات' },
                 { to: '/categories', label: 'دسته‌بندی‌ها' },
+                { to: '/about', label: 'درباره ما' },
+                ...(user ? [
+                  { to: '/profile', label: 'پروفایل' },
+                  { to: '/wishlist', label: 'علاقه‌مندی‌ها' },
+                  { to: '/orders', label: 'سفارشات من' },
+                ] : []),
               ].map((item) => (
                 <Link
                   key={item.to}

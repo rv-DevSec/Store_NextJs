@@ -261,17 +261,26 @@ const CheckoutForm = () => {
                 </div>
               </label>
               {settings?.cardToCard?.active && (
-                <label className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition ${paymentMethod === 'card-to-card' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <input type="radio" name="payment" value="card-to-card" checked={paymentMethod === 'card-to-card'}
-                    onChange={(e) => setPaymentMethod(e.target.value)} />
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-sm">کارت به کارت</p>
-                    <p className="text-xs text-gray-500">{settings.cardToCard.bankName} - {settings.cardToCard.cardNumber}</p>
-                  </div>
-                </label>
+                <div>
+                  <label className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition ${paymentMethod === 'card-to-card' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <input type="radio" name="payment" value="card-to-card" checked={paymentMethod === 'card-to-card'}
+                      onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <div>
+                      <p className="font-medium text-sm">کارت به کارت</p>
+                      <p className="text-xs text-gray-500">{settings.cardToCard.bankName} - {settings.cardToCard.cardNumber}</p>
+                    </div>
+                  </label>
+                  {paymentMethod === 'card-to-card' && (
+                    <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <p className="text-sm text-blue-800">
+                        پس از ثبت سفارش، اطلاعات کارت به کارت و نحوه آپلود رسید پرداخت در صفحه سفارش نمایش داده می‌شود.
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

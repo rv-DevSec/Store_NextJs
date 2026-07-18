@@ -61,3 +61,18 @@ next-env.d.ts
 
 # Coverage
 coverage/
+
+# Backup files
+*~
+*.bak
+*.orig
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Uploaded from old version
+list.xlsx

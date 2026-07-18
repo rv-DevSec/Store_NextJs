@@ -49,6 +49,7 @@ const orderSchema = new mongoose.Schema(
     seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     sellerStatus: { type: String, enum: ['in_progress', 'calling', 'called', 'accept', 'sent', 'cancelled'] },
     sellerNote: { type: String },
+    orderId: { type: String, unique: true, sparse: true },
     trackingCode: { type: String },
     note: { type: String },
   },

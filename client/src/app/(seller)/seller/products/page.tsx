@@ -162,23 +162,23 @@ const SellerProducts = () => {
                           </div>
                         )}
                       </div>
-                      <span className="font-medium truncate max-w-[250px]">{product.name}</span>
+                      <span className="font-medium truncate max-w-[160px] sm:max-w-[250px]">{product.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-bold text-primary">{formatPrice(product.sellerPrice)}</td>
+                  <td className="px-4 py-3 font-bold text-primary whitespace-nowrap">{formatPrice(product.sellerPrice)}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-lg text-xs ${product.stock > 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-xs whitespace-nowrap ${product.stock > 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
                       {product.stock > 0 ? toPersianNumber(product.stock) + ' عدد' : 'ناموجود'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <input type="number" min={1} max={product.stock} value={quantities[product._id] || 1}
                       onChange={(e) => setQuantities((prev) => ({ ...prev, [product._id]: Math.max(1, Number(e.target.value)) }))}
-                      className="w-16 px-2 py-1 border border-gray-300 rounded text-xs text-center" />
+                      className="w-14 sm:w-16 px-2 py-1 border border-gray-300 rounded text-xs text-center" />
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => addToCart(product)} disabled={product.stock === 0}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition disabled:opacity-50 ${addedFeedback[product._id] ? 'bg-success/20 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition disabled:opacity-50 whitespace-nowrap ${addedFeedback[product._id] ? 'bg-success/20 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
                       {addedFeedback[product._id] ? 'افزوده شد' : 'افزودن'}
                     </button>
                   </td>

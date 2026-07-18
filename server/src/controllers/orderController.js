@@ -216,6 +216,7 @@ exports.getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('items.product', 'name slug images')
+      .populate('user', 'name email phone')
       .lean();
 
     if (!order) {

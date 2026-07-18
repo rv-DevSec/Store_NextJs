@@ -71,7 +71,7 @@ const SellerCart = () => {
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         {orderItems.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2">
+          <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <select value={item.productId} onChange={(e) => updateItem(idx, 'productId', e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
               <option value="">انتخاب محصول</option>
@@ -79,10 +79,12 @@ const SellerCart = () => {
                 <option key={p._id} value={p._id}>{p.name} — {formatPrice(p.sellerPrice)}</option>
               ))}
             </select>
-            <input type="number" min={1} value={item.qty} onChange={(e) => updateItem(idx, 'qty', Math.max(1, Number(e.target.value)))}
-              className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary text-center" />
-            <button onClick={() => removeItem(idx)}
-              className="text-xs px-2 py-1.5 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
+            <div className="flex items-center gap-2">
+              <input type="number" min={1} value={item.qty} onChange={(e) => updateItem(idx, 'qty', Math.max(1, Number(e.target.value)))}
+                className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary text-center" />
+              <button onClick={() => removeItem(idx)}
+                className="text-xs px-2 py-1.5 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
+            </div>
           </div>
         ))}
 

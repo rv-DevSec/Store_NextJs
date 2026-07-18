@@ -31,6 +31,7 @@ const Home = () => {
   const festival = settings?.festival;
   const featuredProducts = featuredData?.products || [];
   const categories = categoriesData?.categories || [];
+  const phones: string[] = Array.isArray(settings?.phones) ? settings.phones : [];
 
   return (
     <div>
@@ -187,6 +188,24 @@ const Home = () => {
           ))}
         </div>
       </section>
+
+      {phones.length > 0 && (
+        <section className="bg-primary/5 border-t border-primary/10 py-4">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <p className="text-sm text-gray-600 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+              <span className="font-medium text-gray-800">تلفن تماس: </span>
+              {phones.map((p, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="text-gray-300 mx-1">|</span>}
+                  <a href={`tel:${p}`} dir="ltr" className="font-mono text-primary font-medium hover:text-primary-dark transition whitespace-nowrap">
+                    {p}
+                  </a>
+                </span>
+              ))}
+            </p>
+          </div>
+        </section>
+      )}
     </div>
   );
 };
