@@ -8,11 +8,12 @@ exports.getCars = async (req, res, next) => {
 
     const brands = [...new Set(cars.map((c) => c.brand))].map((brand) => ({
       brand,
-      models: cars.filter((c) => c.brand === brand).map(({ _id, model, year, slug }) => ({
+      models: cars.filter((c) => c.brand === brand).map(({ _id, model, year, slug, image }) => ({
         _id,
         model,
         year,
         slug,
+        image: image || undefined,
       })),
     }));
 

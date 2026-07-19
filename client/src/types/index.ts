@@ -66,6 +66,7 @@ export interface ICar {
   year?: number;
   engineType?: string;
   slug: string;
+  image?: string;
   isActive: boolean;
 }
 

@@ -6,6 +6,7 @@ const carSchema = new mongoose.Schema(
     model: { type: String, required: true, trim: true },
     year: { type: Number },
     engineType: { type: String },
+    image: { type: String },
     slug: { type: String, required: true },
     isActive: { type: Boolean, default: true },
   },

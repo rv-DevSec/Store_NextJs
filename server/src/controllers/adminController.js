@@ -429,6 +429,9 @@ exports.deleteCategory = async (req, res, next) => {
 exports.createCar = async (req, res, next) => {
   try {
     const data = pickCar(req.body);
+    if (req.file) {
+      data.image = `/uploads/${req.file.filename}`;
+    }
     if (!data.slug && data.brand && data.model) {
       data.slug = `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase();
     }
@@ -442,6 +445,9 @@ exports.createCar = async (req, res, next) => {
 exports.updateCar = async (req, res, next) => {
   try {
     const data = pickCar(req.body);
+    if (req.file) {
+      data.image = `/uploads/${req.file.filename}`;
+    }
     if (!data.slug && data.brand && data.model) {
       data.slug = `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase();
     }

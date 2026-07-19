@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminCreateCar, adminUpdateCar, adminDeleteCar } from '@/services/orderService';
 import { getCars } from '@/services/productService';
+import api from '@/lib/api';
 
 const AdminCars = () => {
   const queryClient = useQueryClient();
@@ -11,6 +12,7 @@ const AdminCars = () => {
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createMutation = useMutation({
     mutationFn: adminCreateCar,
@@ -58,6 +60,32 @@ const AdminCars = () => {
     setName('');
   };
 
+  const handleImageUpload = async (carId: string, file: File) => {
+    setError('');
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      await api.put(`/admin/cars/${carId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطا در آپلود تصویر';
+      setError(msg);
+    }
+  };
+
+  const handleRemoveImage = async (carId: string) => {
+    setError('');
+    try {
+      await api.put(`/admin/cars/${carId}`, { image: '' });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطا در حذف تصویر';
+      setError(msg);
+    }
+  };
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">خودروها</h1>
@@ -77,10 +105,37 @@ const AdminCars = () => {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
-        {cars.map((car: { _id: string; brand: string; model: string }) => (
-          <div key={car._id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition">
-            <span className="text-sm font-medium">{car.brand}{car.model !== car.brand ? ` ${car.model}` : ''}</span>
-            <div className="flex gap-2">
+        {cars.map((car: { _id: string; brand: string; model: string; image?: string }) => (
+          <div key={car._id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {car.image ? (
+                  <img src={car.image} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10l6-4 6 4m-12 0v6a2 2 0 002 2h8a2 2 0 002-2v-6M5 10l6 4 6-4" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm font-medium truncate">{car.brand}{car.model !== car.brand ? ` ${car.model}` : ''}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <label className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition cursor-pointer">
+                تصویر
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(car._id, file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              {car.image && (
+                <button onClick={() => handleRemoveImage(car._id)} className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition">حذف تصویر</button>
+              )}
               <button onClick={() => handleEdit(car)} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition">ویرایش</button>
               <button onClick={() => { if (confirm('حذف شود؟')) deleteMutation.mutate(car._id); }} className="text-xs px-2 py-1 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
             </div>

@@ -153,6 +153,7 @@ router.delete('/categories/:id', [
 ], deleteCategory);
 
 router.post('/cars', [
+  upload('image'),
   body('brand').notEmpty().withMessage('برند خودرو الزامی است'),
   body('model').notEmpty().withMessage('مدل خودرو الزامی است'),
   body('year').optional().isNumeric().withMessage('سال باید عدد باشد'),
@@ -160,6 +161,7 @@ router.post('/cars', [
 ], createCar);
 
 router.put('/cars/:id', [
+  upload('image'),
   param('id').isMongoId().withMessage('شناسه خودرو نامعتبر است'),
   body('brand').optional().notEmpty().withMessage('برند نمی‌تواند خالی باشد'),
   body('model').optional().notEmpty().withMessage('مدل نمی‌تواند خالی باشد'),
