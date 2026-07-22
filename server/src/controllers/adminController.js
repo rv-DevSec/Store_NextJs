@@ -143,9 +143,15 @@ exports.updateOrderStatus = async (req, res, next) => {
       }
     }
 
-    const filter = { _id: req.params.id };
+    const filter = {
+      _id: req.params.id,
+    };
     if (status) filter.status = existing.status;
     if (paymentStatus) filter.paymentStatus = existing.paymentStatus;
+    if (status && paymentStatus) {
+      filter.status = existing.status;
+      filter.paymentStatus = existing.paymentStatus;
+    }
 
     const update = {};
     if (status) update.status = status;
@@ -187,7 +193,10 @@ exports.deleteOrder = async (req, res, next) => {
     const noRestoreStatuses = ['paid', 'delivered', 'shipped', 'refunded'];
     if (!noRestoreStatuses.includes(order.paymentStatus)) {
       await Promise.all(order.items.map(item =>
-        Product.findByIdAndUpdate(item.product, { $inc: { stock: item.qty } })
+        Product.findOneAndUpdate(
+          { _id: item.product, stock: { $gte: 0 } },
+          { $inc: { stock: item.qty } }
+        )
       ));
     }
     await Order.findByIdAndDelete(req.params.id);
@@ -859,7 +868,10 @@ exports.deleteSellerOrder = async (req, res, next) => {
     const noRestoreStatuses = ['delivered', 'shipped'];
     if (!noRestoreStatuses.includes(order.sellerStatus)) {
       await Promise.all(order.items.map(item =>
-        Product.findByIdAndUpdate(item.product, { $inc: { stock: item.qty } })
+        Product.findOneAndUpdate(
+          { _id: item.product, stock: { $gte: 0 } },
+          { $inc: { stock: item.qty } }
+        )
       ));
     }
     await Order.findByIdAndDelete(req.params.id);

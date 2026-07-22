@@ -135,6 +135,8 @@ const AdminSellerOrders = () => {
                   <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDateTime(order.createdAt)}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 max-w-[120px] truncate">{order.sellerNote || '—'}</td>
                   <td className="px-4 py-3 text-left">
+                    <a href={`/admin/orders/${order._id}`}
+                      className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition ml-1">جزئیات</a>
                     <button onClick={() => { if (confirm('حذف شود؟')) deleteMutation.mutate(order._id); }}
                       className="text-xs px-2 py-1 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
                   </td>

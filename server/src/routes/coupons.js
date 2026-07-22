@@ -1,15 +1,8 @@
 const router = require('express').Router();
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 const { validateCoupon } = require('../controllers/couponController');
 const { protect } = require('../middlewares/auth');
-
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ success: false, message: errors.array()[0].msg });
-  }
-  next();
-};
+const validate = require('../middlewares/validate');
 
 router.post('/validate', protect, [
   body('code').notEmpty().withMessage('کد تخفیف الزامی است'),

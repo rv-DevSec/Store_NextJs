@@ -19,6 +19,9 @@ const protect = async (req, res, next) => {
     if (!req.user) {
       return next(new AppError('کاربر یافت نشد', 401));
     }
+    if (!req.user.isActive) {
+      return next(new AppError('حساب کاربری شما غیرفعال شده است', 403));
+    }
     next();
   } catch (error) {
     return next(new AppError('توکن نامعتبر است', 401));

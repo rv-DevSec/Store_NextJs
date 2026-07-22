@@ -27,7 +27,10 @@ const getInitialUser = (): IUser | null => {
   if (typeof window !== 'undefined') {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      try { return JSON.parse(storedUser); } catch { /* ignore */ }
+      try { return JSON.parse(storedUser); } catch {
+        console.error('[AuthProvider] Failed to parse stored user');
+        localStorage.removeItem('user');
+      }
     }
   }
   return null;
@@ -35,7 +38,9 @@ const getInitialUser = (): IUser | null => {
 
 const isTokenExpired = (token: string): boolean => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
     return payload.exp * 1000 < Date.now();
   } catch {
     return true;
@@ -80,7 +85,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('refreshToken', data.refreshToken);
         setUser(storedUser);
-      } catch {
+      } catch (err) {
+        console.error('[AuthProvider] Token refresh failed:', err);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -128,8 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (refreshToken) {
         await api.post('/auth/logout', { refreshToken });
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('[AuthProvider] Logout error:', err);
     }
     queryClient.clear();
     localStorage.removeItem('token');

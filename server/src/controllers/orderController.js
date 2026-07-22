@@ -50,6 +50,9 @@ exports.createOrder = async (req, res, next) => {
     }
 
     // Phase 2: write phase with rollback on any failure
+    // Note: Standalone MongoDB does not support transactions; instead we rely on
+    // atomic conditional updates (findOneAndUpdate with $gte/expr guards) plus a
+    // rollback catch block to keep operations safe.
     const decrementedItems = [];
     let appliedCoupon = null;
     let couponUpdated = false;
@@ -93,17 +96,19 @@ exports.createOrder = async (req, res, next) => {
           discountAmount = coupon.value;
         }
 
-        if (coupon.usageLimit != null) {
-          const updatedCoupon = await Coupon.findOneAndUpdate(
-            { _id: coupon._id, $expr: { $lt: ['$usedCount', '$usageLimit'] } },
-            { $inc: { usedCount: 1 } },
-            { new: true }
-          );
-          if (!updatedCoupon) {
-            throw new AppError('کد تخفیف منقضی شده است', 400);
-          }
-        } else {
-          await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+        const updatedCoupon = await Coupon.findOneAndUpdate(
+          {
+            _id: coupon._id,
+            $or: [
+              { usageLimit: null },
+              { $expr: { $lt: ['$usedCount', '$usageLimit'] } },
+            ],
+          },
+          { $inc: { usedCount: 1 } },
+          { new: true }
+        );
+        if (!updatedCoupon) {
+          throw new AppError('کد تخفیف منقضی شده است', 400);
         }
         appliedCoupon = coupon._id;
         couponUpdated = true;
@@ -149,15 +154,21 @@ exports.createOrder = async (req, res, next) => {
         needsPayment,
       });
     } catch (err) {
-      // Rollback stock
+      // Rollback stock — conditional to avoid over-restoring in concurrent scenarios
       if (decrementedItems.length) {
         await Promise.all(decrementedItems.map(i =>
-          Product.findByIdAndUpdate(i.productId, { $inc: { stock: i.qty } })
+          Product.findOneAndUpdate(
+            { _id: i.productId, stock: { $gte: 0 } },
+            { $inc: { stock: i.qty } }
+          )
         ));
       }
       // Rollback coupon
       if (couponUpdated && appliedCoupon) {
-        await Coupon.findByIdAndUpdate(appliedCoupon, { $inc: { usedCount: -1 } });
+        await Coupon.findOneAndUpdate(
+          { _id: appliedCoupon, $expr: { $gt: ['$usedCount', 0] } },
+          { $inc: { usedCount: -1 } }
+        );
       }
       throw err;
     }
@@ -195,7 +206,7 @@ exports.updateOrderPaymentInfo = async (req, res, next) => {
       {
         _id: req.params.id,
         user: req.user._id,
-        paymentMethod: 'card-to-card',
+        paymentMethod: { $in: ['card-to-card', 'seller'] },
         paymentStatus: 'pending',
       },
       update,
@@ -226,7 +237,8 @@ exports.getOrderById = async (req, res, next) => {
     if (!order.user) {
       return next(new AppError('دسترسی غیرمجاز', 403));
     }
-    if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    const orderUserId = (order.user._id || order.user).toString();
+    if (orderUserId !== req.user._id.toString() && req.user.role !== 'admin') {
       return next(new AppError('دسترسی غیرمجاز', 403));
     }
 

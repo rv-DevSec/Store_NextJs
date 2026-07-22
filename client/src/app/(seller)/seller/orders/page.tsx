@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { formatPrice, formatDateTime, toPersianNumber } from '@/lib/utils/numbers';
 import api from '@/lib/api';
 
@@ -25,7 +26,8 @@ const SellerOrders = () => {
 
       <div className="grid grid-cols-1 gap-4">
         {orders.map((order: { _id: string; items?: Array<{ name: string; qty: number; price: number }>; totalAmount: number; status: string; sellerStatus?: string; createdAt: string }) => (
-          <div key={order._id} className="bg-white rounded-xl border border-gray-200 p-4">
+          <Link key={order._id} href={`/seller/orders/${order._id}`}
+            className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between mb-2">
               <span className={`px-2 py-0.5 rounded-lg text-xs ${
                 order.sellerStatus === 'sent' ? 'bg-success/10 text-success' :
@@ -45,7 +47,7 @@ const SellerOrders = () => {
               <span className="font-bold text-gray-700">{formatPrice(order.totalAmount)}</span>
               <span>{formatDateTime(order.createdAt)}</span>
             </div>
-          </div>
+          </Link>
         ))}
         {orders.length === 0 && <p className="text-center py-8 text-gray-500">سفارشی وجود ندارد</p>}
       </div>

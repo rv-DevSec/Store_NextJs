@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const siteSettingsSchema = new mongoose.Schema({
   headerImage: { type: String, default: '' },
-  phones: [{ type: String }],
+  phones: [{ name: { type: String, default: '' }, tel: { type: String, default: '' } }],
   email: { type: String, default: '' },
   address: { type: String, default: '' },
   about: { type: String, default: '' },
@@ -15,6 +15,8 @@ const siteSettingsSchema = new mongoose.Schema({
     btnText: { type: String, default: 'مشاهده محصولات' },
     products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     bgColor: { type: String, default: '#dc2626' },
+    topBanner: { type: Boolean, default: false },
+    topBannerText: { type: String, default: 'تخفیف‌های ویژه پایان فصل - تا ۵۰٪ تخفیف' },
   },
   cardToCard: {
     active: { type: Boolean, default: false },

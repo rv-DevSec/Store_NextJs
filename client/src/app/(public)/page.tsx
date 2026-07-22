@@ -32,7 +32,7 @@ const Home = () => {
       }
     }
   }
-  const phones: string[] = Array.isArray(settings?.phones) ? settings.phones : [];
+  const phones: { name?: string; tel?: string }[] = Array.isArray(settings?.phones) ? settings.phones : [];
 
   return (
     <div>
@@ -130,14 +130,14 @@ const Home = () => {
                       {phones.map((p, i) => (
                         <a
                           key={i}
-                          href={`tel:${p}`}
+                          href={`tel:${p.tel}`}
                           dir="ltr"
                           className="flex items-center gap-2 text-white font-bold text-lg md:text-xl hover:text-secondary transition whitespace-nowrap"
                         >
                           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
-                          {p}
+                          {p.name ? `${p.name}: ${p.tel}` : p.tel}
                         </a>
                       ))}
                     </div>
@@ -153,7 +153,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">خودروی خود را انتخاب کنید</h2>
-            <Link href="/products" className="text-primary hover:underline text-sm">مشاهده همه</Link>
+            <Link href="/cars" className="text-primary hover:underline text-sm">مشاهده همه</Link>
           </div>
           {allCars.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

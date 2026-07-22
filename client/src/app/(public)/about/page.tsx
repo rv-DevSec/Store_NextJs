@@ -24,7 +24,7 @@ const AboutPage = () => {
     { icon: '🔄', title: 'بازگشت کالا', desc: 'امکان بازگشت کالا در صورت نارضایتی' },
   ];
 
-  const phones: string[] = Array.isArray(s.phones) ? s.phones : (s.phone ? [s.phone] : []);
+  const phones: { name?: string; tel?: string }[] = Array.isArray(s.phones) ? s.phones : [];
 
   return (
     <div>
@@ -53,12 +53,12 @@ const AboutPage = () => {
             <h2 className="text-lg font-bold mb-6 tracking-wide opacity-90">برای مشاوره و خرید با ما تماس بگیرید</h2>
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
               {phones.map((p, i) => (
-                <a key={i} href={`tel:${p}`} dir="ltr"
+                <a key={i} href={`tel:${p.tel}`} dir="ltr"
                   className="inline-flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-xl px-6 py-3 hover:bg-white/25 transition-all duration-200 hover:scale-105">
                   <svg className="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <span className="text-xl md:text-2xl font-bold tracking-wider">{p}</span>
+                  <span className="text-xl md:text-2xl font-bold tracking-wider">{p.name ? `${p.name}: ${p.tel}` : p.tel}</span>
                 </a>
               ))}
             </div>

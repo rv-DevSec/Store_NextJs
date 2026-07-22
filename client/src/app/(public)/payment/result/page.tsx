@@ -1,26 +1,15 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import api from '@/lib/api';
 import SEO from '@/components/common/SEO';
 
 const PaymentResultContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const status = searchParams.get('Status');
-  const authority = searchParams.get('Authority');
   const orderId = searchParams.get('orderId');
-
-  useEffect(() => {
-    if (status === 'OK' && authority && orderId) {
-      api.put(`/orders/${orderId}/payment-info`, {
-        'paymentInfo.authority': authority,
-        paymentStatus: 'paid',
-      }).catch(() => {});
-    }
-  }, [status, authority, orderId]);
 
   const isSuccess = status === 'OK';
 

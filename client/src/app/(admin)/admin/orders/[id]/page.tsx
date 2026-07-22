@@ -188,9 +188,9 @@ const AdminOrderDetail = () => {
             </div>
           </div>
 
-          {isCardToCard && (
+          {(isCardToCard || order.type === 'seller') && (
             <div className={`bg-white border rounded-xl p-6 ${receiptImage && order.paymentStatus === 'pending' ? 'border-yellow-300' : 'border-gray-200'}`}>
-              <h2 className="font-bold mb-4">پرداخت کارت به کارت</h2>
+              <h2 className="font-bold mb-4">{order.type === 'seller' ? 'رسید پرداخت' : 'پرداخت کارت به کارت'}</h2>
               {receiptImage ? (
                 <div className="space-y-4">
                   <a href={receiptImage} target="_blank" rel="noopener noreferrer">

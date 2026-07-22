@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useProduct } from '@/lib/hooks/useProducts';
+import { useProduct, useProducts } from '@/lib/hooks/useProducts';
 import { useCart } from '@/providers/CartProvider';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import SEO from '@/components/common/SEO';
 import { getFavorites } from '@/services/orderService';
 import { getProductReviews, createReview } from '@/services/reviewService';
 import FavoriteButton from '@/components/common/FavoriteButton';
+import ProductCard from '@/components/product/ProductCard';
 import type { IProduct, IReview, ICategory, ICar } from '@/types';
 
 interface PopulatedProduct extends Omit<IProduct, 'category' | 'compatibleCars'> {
@@ -96,6 +98,15 @@ const ProductDetail = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const product = data?.product as PopulatedProduct | undefined;
+
+  const categoryId = product?.category?._id || '';
+  const { data: relatedData } = useProducts(
+    categoryId ? { category: categoryId, limit: '6' } : {}
+  );
+
+  const relatedProducts: IProduct[] = (relatedData?.products || []).filter(
+    (p: IProduct) => p._id !== product?._id
+  ).slice(0, 6);
 
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
     queryKey: ['product-reviews', product?._id],
@@ -392,6 +403,20 @@ const ProductDetail = () => {
           )}
         </div>
       </div>
+
+      {relatedProducts.length > 0 && (
+        <div className="mt-12 border-t border-gray-200 pt-8 animate-fade-in">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">محصولات مرتبط</h2>
+            <Link href={`/products?category=${categoryId}`} className="text-primary hover:underline text-sm">مشاهده همه</Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {relatedProducts.map((rp, idx) => (
+              <ProductCard key={rp._id} product={rp} idx={idx} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-12 border-t border-gray-200 pt-8 animate-fade-in">
         <div className="flex items-center justify-between mb-6">

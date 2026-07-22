@@ -3,6 +3,13 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../../.e
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+// In production, NODE_ENV must be explicitly set
+if (nodeEnv === 'development' && process.env.NODE_ENV === undefined) {
+  console.warn('WARNING: NODE_ENV is not set. Defaulting to "development". Set NODE_ENV=production in production.');
+}
+
 module.exports = {
   port: parseInt(process.env.PORT, 10) || 5000,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/car-parts-store',
@@ -11,5 +18,5 @@ module.exports = {
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || '',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
 };

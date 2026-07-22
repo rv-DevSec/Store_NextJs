@@ -22,6 +22,9 @@ exports.getSettings = async (req, res, next) => {
       settings = await SiteSettings.create({});
     }
     const result = settings.toObject();
+    if (Array.isArray(result.phones) && result.phones.length > 0 && typeof result.phones[0] === 'string') {
+      result.phones = result.phones.map(tel => ({ name: '', tel }));
+    }
     const authUser = await getAuthUser(req);
     if (!authUser) {
       result.cardToCard = { active: result.cardToCard?.active || false };
@@ -34,7 +37,6 @@ exports.getSettings = async (req, res, next) => {
 
 const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal'];
 const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor'];
-const ARRAY_FIELDS = ['phones'];
 const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 
 exports.updateSettings = async (req, res, next) => {
@@ -51,12 +53,14 @@ exports.updateSettings = async (req, res, next) => {
           for (const [k, v] of Object.entries(val)) {
             if (STRING_FIELDS.includes(k) && typeof v === 'string') sanitized[k] = v;
             else if (k === 'active' && typeof v === 'boolean') sanitized[k] = v;
+            else if (k === 'topBanner' && typeof v === 'boolean') sanitized[k] = v;
+            else if (k === 'topBannerText' && typeof v === 'string') sanitized[k] = v;
             else if (k === 'bgColor' && typeof v === 'string') sanitized[k] = v;
             else if (k === 'products' && Array.isArray(v)) sanitized[k] = v;
           }
           settings[key] = sanitized;
-        } else if (ARRAY_FIELDS.includes(key) && Array.isArray(val)) {
-          settings[key] = val.filter(v => typeof v === 'string');
+        } else if (key === 'phones' && Array.isArray(val)) {
+          settings[key] = val.filter(v => v && typeof v === 'object' && typeof v.name === 'string' && typeof v.tel === 'string').map(v => ({ name: v.name, tel: v.tel }));
         } else if (NUMERIC_FIELDS.includes(key) && typeof val === 'number') {
           settings[key] = val;
         } else if (typeof val === 'string') {

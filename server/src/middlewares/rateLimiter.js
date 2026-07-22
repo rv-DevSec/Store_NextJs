@@ -47,3 +47,11 @@ exports.globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+exports.adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: { success: false, message: 'تعداد درخواست‌ها بیش از حد مجاز است' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

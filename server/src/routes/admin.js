@@ -4,7 +4,9 @@ const path = require('path');
 const multer = require('multer');
 const { protect, admin } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
+const { validateFileContent } = require('../middlewares/upload');
 const validate = require('../middlewares/validate');
+const { adminLimiter } = require('../middlewares/rateLimiter');
 const {
   getStats,
   getAdminOrders,
@@ -60,7 +62,7 @@ const xlsxUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-router.use(protect, admin);
+router.use(protect, admin, adminLimiter);
 
 router.get('/stats', getStats);
 router.get('/orders', getAdminOrders);
@@ -232,7 +234,20 @@ router.put('/master-prices/:id', [
   validate,
 ], updateMasterPrice);
 
-router.post('/master-prices/upload', xlsxUpload.single('file'), uploadMasterPriceXlsx);
+router.post('/master-prices/upload', (req, res, next) => {
+  const single = xlsxUpload.single('file');
+  single(req, res, async (err) => {
+    if (err) return res.status(400).json({ success: false, message: err.message });
+    if (!req.file) return res.status(400).json({ success: false, message: 'فایل XLSX الزامی است' });
+    try {
+      await validateFileContent(req.file.path);
+    } catch (validationErr) {
+      require('fs').unlink(req.file.path, () => {});
+      return res.status(400).json({ success: false, message: validationErr.message });
+    }
+    next();
+  });
+}, uploadMasterPriceXlsx);
 
 /* ─── Seller Orders ─── */
 

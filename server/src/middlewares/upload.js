@@ -23,6 +23,8 @@ const MAGIC_BYTES = {
   jpg: [0xff, 0xd8, 0xff],
   jpeg: [0xff, 0xd8, 0xff],
   png: [0x89, 0x50, 0x4e, 0x47],
+  xlsx: [0x50, 0x4b, 0x03, 0x04],
+  xls: [0xd0, 0xcf, 0x11, 0xe0],
 };
 
 const fileFilter = (req, file, cb) => {
@@ -34,25 +36,20 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const validateFileContent = (filePath) => {
-  return new Promise((resolve, reject) => {
-    const fd = fs.openSync(filePath, 'r');
+const validateFileContent = async (filePath) => {
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  const magic = MAGIC_BYTES[ext];
+  if (!magic) return;
+
+  const fd = await fs.promises.open(filePath, 'r');
+  try {
     const buffer = Buffer.alloc(8);
-    fs.read(fd, buffer, 0, 8, 0, (err, bytesRead) => {
-      fs.closeSync(fd);
-      if (err) return reject(new Error('خطا در خواندن فایل'));
-
-      const ext = path.extname(filePath).toLowerCase().replace('.', '');
-      const magic = MAGIC_BYTES[ext];
-      if (!magic) return reject(new Error('فرمت فایل نامعتبر است'));
-
-      const matches = magic.every((byte, idx) => buffer[idx] === byte);
-      console.log('[FILE_CHECK] ext:', ext, 'bytes:', Array.from(buffer.slice(0, 8)), 'expected:', magic, 'matches:', matches, 'size:', fs.statSync(filePath).size);
-      if (!matches) return reject(new Error('محتوای فایل با فرمت اعلام شده مطابقت ندارد'));
-
-      resolve();
-    });
-  });
+    await fd.read(buffer, 0, 8, 0);
+    const matches = magic.every((byte, idx) => buffer[idx] === byte);
+    if (!matches) throw new Error('محتوای فایل با فرمت اعلام شده مطابقت ندارد');
+  } finally {
+    await fd.close();
+  }
 };
 
 const upload = multer({
@@ -95,3 +92,4 @@ const uploadWithValidation = (fieldName, maxCount) => {
 };
 
 module.exports = uploadWithValidation;
+module.exports.validateFileContent = validateFileContent;

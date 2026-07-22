@@ -19,5 +19,6 @@ router.use('/addresses', require('./address'));
 router.use('/invoice', require('./invoice'));
 router.use('/admin', require('./admin'));
 router.use('/seller', require('./seller'));
+router.use('/product-requests', require('./productRequests'));
 
 module.exports = router;

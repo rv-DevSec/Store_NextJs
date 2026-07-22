@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const https = require('https');
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const SiteSettings = require('../models/SiteSettings');
 const config = require('../config');
 const { AppError } = require('../middlewares/errorHandler');
@@ -21,6 +22,13 @@ const getMerchantId = () => {
     return config.zarinpalMerchantId;
   }
   return config.zarinpalMerchantId || SANDBOX_MERCHANT_ID;
+};
+
+const restoreStock = async (items) => {
+  if (!items || items.length === 0) return;
+  await Promise.all(items.map(item =>
+    Product.findByIdAndUpdate(item.product, { $inc: { stock: item.qty } })
+  ));
 };
 
 exports.requestPayment = async (req, res, next) => {
@@ -48,8 +56,9 @@ exports.requestPayment = async (req, res, next) => {
     const host = getHost();
     const merchantId = getMerchantId();
     if (!order.paymentInfo) order.paymentInfo = {};
-    if (!order.paymentInfo.nonce) {
+    if (!order.paymentInfo.nonce || !order.paymentInfo.authority) {
       order.paymentInfo.nonce = crypto.randomBytes(16).toString('hex');
+      if (order.paymentInfo.authority) delete order.paymentInfo.authority;
       await order.save();
     }
     const nonce = order.paymentInfo.nonce;
@@ -123,28 +132,37 @@ exports.verifyPayment = async (req, res, next) => {
   try {
     const { Authority, Status, orderId, nonce } = req.query;
 
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return next(new AppError('سفارش یافت نشد', 404));
+    // Phase 1: atomically claim this verification — prevents race between concurrent callbacks
+    const claimed = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        paymentStatus: 'pending',
+        'paymentInfo.nonce': nonce,
+      },
+      {
+        $set: { paymentStatus: 'verifying' },
+        $unset: { 'paymentInfo.nonce': '' },
+      },
+      { new: true }
+    );
+
+    if (!claimed) {
+      const order = await Order.findById(orderId).lean();
+      if (order?.paymentStatus === 'paid') {
+        return res.redirect(`${config.clientUrl}/payment/result?status=success&orderId=${order._id}`);
+      }
+      if (order?.paymentStatus === 'failed' || order?.paymentStatus === 'refunded') {
+        return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${order._id}`);
+      }
+      return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${orderId}`);
     }
 
-    if (!order.paymentInfo?.nonce || order.paymentInfo.nonce !== nonce) {
-      auditLog('verify_nonce_mismatch', { orderId: order._id.toString(), authority: Authority, receivedNonce: nonce });
-      return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${order._id}`);
-    }
-
-    if (order.paymentStatus === 'paid') {
-      return res.redirect(`${config.clientUrl}/payment/result?status=success&orderId=${order._id}`);
-    }
-    if (order.paymentStatus === 'refunded') {
-      return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${order._id}`);
-    }
-
+    // User cancelled on Zarinpal page
     if (Status !== 'OK') {
-      order.paymentStatus = 'failed';
-      await order.save();
-      auditLog('verify_cancelled', { orderId: order._id.toString(), authority: Authority });
-      return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${order._id}`);
+      await restoreStock(claimed.items);
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
+      auditLog('verify_cancelled', { orderId, authority: Authority });
+      return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${orderId}`);
     }
 
     const host = getHost();
@@ -153,7 +171,7 @@ exports.verifyPayment = async (req, res, next) => {
     const verifyData = JSON.stringify({
       merchant_id: merchantId,
       authority: Authority,
-      amount: order.totalAmount,
+      amount: claimed.totalAmount,
     });
 
     const options = {
@@ -174,40 +192,54 @@ exports.verifyPayment = async (req, res, next) => {
           const result = JSON.parse(data);
 
           if (result.data?.code === 100 || result.data?.code === 101) {
-            // Consume nonce AFTER successful verification (prevents replay but allows retry on network failure)
-            order.paymentInfo.nonce = undefined;
-            order.paymentStatus = 'paid';
-            order.status = 'processing';
-            order.paymentInfo.refId = String(result.data.ref_id);
-            order.paymentInfo.cardPan = result.data.card_pan || '';
-            order.paymentInfo.fee = result.data.fee;
-            order.paymentInfo.feeType = result.data.fee_type;
-            await order.save();
+            // Atomically finalize — only succeeds if still in 'verifying' state
+            const updated = await Order.findOneAndUpdate(
+              { _id: orderId, paymentStatus: 'verifying' },
+              {
+                $set: {
+                  paymentStatus: 'paid',
+                  status: 'processing',
+                  'paymentInfo.nonce': undefined,
+                  'paymentInfo.refId': String(result.data.ref_id),
+                  'paymentInfo.cardPan': result.data.card_pan || '',
+                  'paymentInfo.fee': result.data.fee,
+                  'paymentInfo.feeType': result.data.fee_type,
+                },
+              },
+              { new: true }
+            );
 
-            auditLog('verify_success', { orderId: order._id.toString(), refId: result.data.ref_id, authority: Authority });
+            if (!updated) {
+              auditLog('verify_race_lost', { orderId, authority: Authority, code: result.data.code });
+            }
+
+            auditLog('verify_success', { orderId, refId: result.data.ref_id, authority: Authority });
 
             return res.redirect(
-              `${config.clientUrl}/payment/result?status=success&orderId=${order._id}&refId=${result.data.ref_id}`
+              `${config.clientUrl}/payment/result?status=success&orderId=${orderId}&refId=${result.data.ref_id}`
             );
           } else {
-            order.paymentStatus = 'failed';
-            await order.save();
-            auditLog('verify_failed', { orderId: order._id.toString(), authority: Authority, code: result.data?.code });
+            await restoreStock(claimed.items);
+            await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
+            auditLog('verify_failed', { orderId, authority: Authority, code: result.data?.code });
             return res.redirect(
-              `${config.clientUrl}/payment/result?status=failed&orderId=${order._id}`
+              `${config.clientUrl}/payment/result?status=failed&orderId=${orderId}`
             );
           }
         } catch (parseErr) {
           return res.redirect(
-            `${config.clientUrl}/payment/result?status=error&orderId=${order._id}`
+            `${config.clientUrl}/payment/result?status=error&orderId=${orderId}`
           );
         }
       });
     });
 
-    verifyRequest.on('error', () => {
+    verifyRequest.on('error', async () => {
+      await restoreStock(claimed.items);
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
+      auditLog('verify_network_error', { orderId, authority: Authority });
       return res.redirect(
-        `${config.clientUrl}/payment/result?status=error&orderId=${order._id}`
+        `${config.clientUrl}/payment/result?status=error&orderId=${orderId}`
       );
     });
 

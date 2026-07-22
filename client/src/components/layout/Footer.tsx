@@ -1,6 +1,20 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { getSettings } from '@/services/productService';
 
 const Footer = () => {
+  const { data } = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+  });
+
+  const settings = data?.settings;
+  const phones: { name?: string; tel?: string }[] = settings?.phones || [];
+  const email: string = settings?.email || '';
+  const address: string = settings?.address || '';
+
   return (
     <footer className="bg-dark text-white mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -36,10 +50,11 @@ const Footer = () => {
           <div>
             <h4 className="font-bold mb-3">اطلاعات تماس</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li>تلفن: ۰۲۱-۱۲۳۴۵۶۷۸</li>
-              <li>موبایل: ۰۹۱۲۱۲۳۴۵۶۷</li>
-              <li>ایمیل: info@carparts.ir</li>
-              <li>آدرس: تهران، خیابان آزادی</li>
+              {phones.filter(p => p.tel).map((p, i) => (
+                <li key={i}>{p.name ? `${p.name}: ${p.tel}` : p.tel}</li>
+              ))}
+              {email && <li>ایمیل: {email}</li>}
+              {address && <li>آدرس: {address}</li>}
             </ul>
           </div>
         </div>

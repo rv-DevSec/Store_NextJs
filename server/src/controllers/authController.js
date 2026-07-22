@@ -20,8 +20,8 @@ const generateRefreshToken = async (userId) => {
   await User.findByIdAndUpdate(userId, {
     $push: {
       refreshTokens: {
-        token: hashed,
-        createdAt: new Date(),
+        $each: [{ token: hashed, createdAt: new Date() }],
+        $slice: -20,
       },
     },
   });
@@ -166,12 +166,10 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save();
 
     const resetUrl = `${config.clientUrl}/reset-password/${resetToken}`;
-    console.log(`\n🔐 Password reset link: ${resetUrl}\n`);
 
     res.json({
       success: true,
       message: 'اگر این ایمیل در سیستم ثبت شده باشد، لینک بازیابی ارسال خواهد شد',
-      ...(process.env.NODE_ENV !== 'production' && { resetUrl }),
     });
   } catch (err) {
     next(err);

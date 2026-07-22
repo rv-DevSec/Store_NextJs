@@ -31,3 +31,8 @@ export const getSettings = async () => {
   const { data } = await api.get('/settings');
   return data;
 };
+
+export const createProductRequest = async (req: { name: string; phone: string; productName: string; description?: string }) => {
+  const { data } = await api.post('/product-requests', req);
+  return data;
+};

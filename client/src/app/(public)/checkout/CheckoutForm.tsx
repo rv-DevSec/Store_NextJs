@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCart } from '@/providers/CartProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { createOrder, requestPayment, validateCoupon, getAddresses, createAddress } from '@/services/orderService';
@@ -14,6 +14,7 @@ import Link from 'next/link';
 const CheckoutForm = () => {
   const { user } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { cartItems, totalPrice, clearCart } = useCart();
 
   const [couponCode, setCouponCode] = useState('');
@@ -58,6 +59,7 @@ const CheckoutForm = () => {
     mutationFn: createOrder,
     onSuccess: async (data: { order?: { _id: string } }) => {
       if (!data?.order?._id) return;
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
       clearCart();
       if (paymentMethod === 'zarinpal' && zarinpalEnabled) {
         try {

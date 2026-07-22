@@ -72,7 +72,7 @@ app.use(morgan(config.nodeEnv === 'production'
   ? ':remote-addr - :remote-user [:date[clf]] ":method :url-redacted HTTP/:http-version" :status :res[content-length]'
   : ':method :url-redacted :status :response-time ms - :res[content-length]'));
 
-app.get('/sitemap.xml', generateSitemap);
+app.get('/sitemap.xml', globalLimiter, generateSitemap);
 
 app.use('/api', routes);
 
