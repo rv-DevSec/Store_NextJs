@@ -24,11 +24,11 @@ const Home = () => {
   const settings = settingsData?.settings;
   const festival = settings?.festival;
   const featuredProducts = featuredData?.products || [];
-  const allCars: { _id: string; model: string; image?: string }[] = [];
+  const allCars: { _id: string; brand: string; model: string; image?: string }[] = [];
   if (carsData?.brands) {
     for (const brand of carsData.brands) {
       for (const m of brand.models) {
-        allCars.push({ _id: m._id, model: m.model, image: m.image });
+        allCars.push({ _id: m._id, brand: brand.brand, model: m.model, image: m.image });
       }
     }
   }
@@ -175,12 +175,12 @@ const Home = () => {
                 >
                   <div className="aspect-[4/3] bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 overflow-hidden group-hover:bg-gray-50 transition-colors duration-300">
                     {car.image ? (
-                      <img src={car.image} alt={car.model} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
+                      <img src={car.image} alt={`${car.brand} ${car.model}`} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
                     ) : (
                       <CarIcon className="w-16 h-12 group-hover:scale-110 transition-transform duration-300" />
                     )}
                   </div>
-                  <h3 className="text-xs font-bold truncate group-hover:text-primary transition-colors duration-200">{car.model}</h3>
+                  <h3 className="text-xs font-bold truncate group-hover:text-primary transition-colors duration-200">{car.brand} {car.model}</h3>
                 </Link>
               ))}
             </div>
