@@ -28,6 +28,7 @@ const siteSettingsSchema = new mongoose.Schema({
   zarinpal: {
     enabled: { type: Boolean, default: false },
   },
+  hidePrices: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('SiteSettings', siteSettingsSchema);

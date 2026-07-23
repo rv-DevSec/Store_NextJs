@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import { getFavorites } from '@/services/orderService';
 import FavoriteButton from '@/components/common/FavoriteButton';
+import { useHidePrices } from '@/lib/hooks/useSettings';
 import type { IProduct } from '@/types';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const ProductCard = ({ product, idx = 0 }: Props) => {
+  const hidePrices = useHidePrices();
   const { data: favData } = useQuery({
     queryKey: ['favorites'],
     queryFn: getFavorites,
@@ -44,7 +46,9 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
         {product.name}
       </h3>
       <div className="mt-2 flex items-baseline gap-2">
-        {product.discountPrice ? (
+        {hidePrices ? (
+          <p className="text-xs font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+        ) : product.discountPrice ? (
           <>
             <p className="text-sm font-bold text-danger">{formatPrice(product.discountPrice)}</p>
             <p className="text-xs text-gray-400 line-through">{formatPrice(product.price)}</p>

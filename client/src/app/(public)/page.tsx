@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils/numbers';
 import SEO from '@/components/common/SEO';
 import api from '@/lib/api';
 import ProductCard from '@/components/product/ProductCard';
+import { useHidePrices } from '@/lib/hooks/useSettings';
 import type { IProduct } from '@/types';
 
 const Home = () => {
@@ -33,6 +34,7 @@ const Home = () => {
     }
   }
   const phones: { name?: string; tel?: string }[] = Array.isArray(settings?.phones) ? settings.phones : [];
+  const hidePrices = useHidePrices();
 
   return (
     <div>
@@ -44,7 +46,7 @@ const Home = () => {
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
                 <h2 className="text-lg md:text-2xl font-bold">{festival.title || 'فروش ویژه'}</h2>
-                {festival.subtitle && <p className="text-sm md:text-base opacity-90">{festival.subtitle}</p>}
+                {festival.subtitle && <p className="text-sm md:text-base opacity-90 font-bold">{festival.subtitle}</p>}
                 {(!festival.products || festival.products.length === 0) && (
                   <Link
                     href="/products?featured=true"
@@ -77,7 +79,9 @@ const Home = () => {
                     </div>
                     <h3 className="text-xs font-bold truncate group-hover:text-primary transition-colors duration-200">{p.name}</h3>
                     <div className="mt-1">
-                      {p.discountPrice ? (
+                      {hidePrices ? (
+                        <p className="text-xs font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+                      ) : p.discountPrice ? (
                         <p className="text-xs font-bold text-danger">{formatPrice(p.discountPrice)}</p>
                       ) : (
                         <p className="text-xs font-bold">{formatPrice(p.price)}</p>
@@ -141,6 +145,7 @@ const Home = () => {
                         </a>
                       ))}
                     </div>
+                    <p className="text-[10px] text-blue-200 mt-2 leading-relaxed">برای اطلاع دقیق از قیمت‌های نمایندگی تماس بگیرید</p>
                   </div>
                 </div>
               )}

@@ -13,7 +13,7 @@ const TopBanner = () => {
   if (!festival?.topBanner || !festival?.topBannerText) return null;
 
   return (
-    <div className="bg-gradient-to-l from-primary to-primary-dark text-white text-center text-sm py-2 px-4">
+    <div className="bg-gradient-to-l from-primary to-primary-dark text-white text-center text-sm font-bold py-2 px-4">
       {festival.topBannerText}
     </div>
   );

@@ -30,6 +30,7 @@ router.put('/', protect, admin, [
   body('festival.subtitle').optional().isString().trim(),
   body('festival.btnText').optional().isString().trim(),
   body('festival.bgColor').optional().isString().trim(),
+  body('hidePrices').optional().isBoolean(),
   validate,
 ], updateSettings);
 

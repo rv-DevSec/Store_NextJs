@@ -35,7 +35,7 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
-const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal'];
+const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices'];
 const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor'];
 const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 
@@ -62,6 +62,8 @@ exports.updateSettings = async (req, res, next) => {
         } else if (key === 'phones' && Array.isArray(val)) {
           settings[key] = val.filter(v => v && typeof v === 'object' && typeof v.name === 'string' && typeof v.tel === 'string').map(v => ({ name: v.name, tel: v.tel }));
         } else if (NUMERIC_FIELDS.includes(key) && typeof val === 'number') {
+          settings[key] = val;
+        } else if (typeof val === 'boolean') {
           settings[key] = val;
         } else if (typeof val === 'string') {
           settings[key] = val;

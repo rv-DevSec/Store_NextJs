@@ -12,6 +12,7 @@ import { getFavorites } from '@/services/orderService';
 import { getProductReviews, createReview } from '@/services/reviewService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import ProductCard from '@/components/product/ProductCard';
+import { useHidePrices } from '@/lib/hooks/useSettings';
 import type { IProduct, IReview, ICategory, ICar } from '@/types';
 
 interface PopulatedProduct extends Omit<IProduct, 'category' | 'compatibleCars'> {
@@ -98,6 +99,7 @@ const ProductDetail = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const product = data?.product as PopulatedProduct | undefined;
+  const hidePrices = useHidePrices();
 
   const categoryId = product?.category?._id || '';
   const { data: relatedData } = useProducts(
@@ -288,7 +290,11 @@ const ProductDetail = () => {
           )}
 
           <div className="flex items-baseline gap-3 mb-4">
-            {product.discountPrice ? (
+            {hidePrices ? (
+              <div className="space-y-1">
+                <p className="text-lg font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+              </div>
+            ) : product.discountPrice ? (
               <>
                 <span className="text-3xl font-bold text-danger">{formatPrice(product.discountPrice)}</span>
                 <span className="text-lg text-gray-400 line-through">{formatPrice(product.price)}</span>

@@ -27,6 +27,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     festivalSubtitle: ((s.festival as Record<string, unknown>)?.subtitle as string) || '',
     festivalBtnText: ((s.festival as Record<string, unknown>)?.btnText as string) || 'مشاهده محصولات',
     festivalBgColor: ((s.festival as Record<string, unknown>)?.bgColor as string) || '#dc2626',
+    hidePrices: (s.hidePrices as boolean) || false,
   });
 
   const saveMutation = useMutation({
@@ -89,6 +90,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
         btnText: form.festivalBtnText,
         bgColor: form.festivalBgColor,
       },
+      hidePrices: form.hidePrices,
     });
   };
 
@@ -201,6 +203,15 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="font-bold mb-4">تنظیمات قیمت‌ها</h3>
+          <label className="flex items-center gap-3">
+            <input type="checkbox" name="hidePrices" checked={form.hidePrices} onChange={handleChange}
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+            <span className="text-sm">مخفی کردن قیمت‌ها (نمایش «برای اطلاع از قیمت تماس بگیرید»)</span>
+          </label>
         </div>
 
         <div className="border-t border-gray-200 pt-6">
