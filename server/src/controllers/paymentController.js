@@ -6,10 +6,6 @@ const SiteSettings = require('../models/SiteSettings');
 const config = require('../config');
 const { AppError } = require('../middlewares/errorHandler');
 
-const auditLog = (event, data) => {
-  console.log(JSON.stringify({ timestamp: new Date().toISOString(), type: 'payment_audit', event, ...data }));
-};
-
 const PROD_HOST = 'payment.zarinpal.com';
 const SANDBOX_HOST = 'sandbox.zarinpal.com';
 
@@ -99,15 +95,12 @@ exports.requestPayment = async (req, res, next) => {
             order.paymentInfo.authority = result.data.authority;
             await order.save();
 
-            auditLog('request_success', { userId: req.user?._id?.toString(), orderId: order._id.toString(), amount: order.totalAmount, authority: result.data.authority });
-
             res.json({
               success: true,
               authority: result.data.authority,
               redirectUrl: `https://${host}/pg/StartPay/${result.data.authority}`,
             });
           } else {
-            auditLog('request_failed', { userId: req.user?._id?.toString(), orderId: order._id.toString(), amount: order.totalAmount, response: result });
             const errMsg = result.errors?.[0]?.message || 'خطا در اتصال به درگاه پرداخت';
             return next(new AppError(errMsg, 500));
           }
@@ -161,7 +154,6 @@ exports.verifyPayment = async (req, res, next) => {
     if (Status !== 'OK') {
       await restoreStock(claimed.items);
       await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
-      auditLog('verify_cancelled', { orderId, authority: Authority });
       return res.redirect(`${config.clientUrl}/payment/result?status=failed&orderId=${orderId}`);
     }
 
@@ -210,10 +202,8 @@ exports.verifyPayment = async (req, res, next) => {
             );
 
             if (!updated) {
-              auditLog('verify_race_lost', { orderId, authority: Authority, code: result.data.code });
+              // another process already finalized
             }
-
-            auditLog('verify_success', { orderId, refId: result.data.ref_id, authority: Authority });
 
             return res.redirect(
               `${config.clientUrl}/payment/result?status=success&orderId=${orderId}&refId=${result.data.ref_id}`
@@ -221,7 +211,6 @@ exports.verifyPayment = async (req, res, next) => {
           } else {
             await restoreStock(claimed.items);
             await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
-            auditLog('verify_failed', { orderId, authority: Authority, code: result.data?.code });
             return res.redirect(
               `${config.clientUrl}/payment/result?status=failed&orderId=${orderId}`
             );
@@ -237,7 +226,6 @@ exports.verifyPayment = async (req, res, next) => {
     verifyRequest.on('error', async () => {
       await restoreStock(claimed.items);
       await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
-      auditLog('verify_network_error', { orderId, authority: Authority });
       return res.redirect(
         `${config.clientUrl}/payment/result?status=error&orderId=${orderId}`
       );

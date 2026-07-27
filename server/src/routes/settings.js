@@ -31,6 +31,8 @@ router.put('/', protect, admin, [
   body('festival.btnText').optional().isString().trim(),
   body('festival.bgColor').optional().isString().trim(),
   body('hidePrices').optional().isBoolean(),
+  body('logo').optional().isString().trim(),
+  body('siteName').optional().isString().trim(),
   validate,
 ], updateSettings);
 

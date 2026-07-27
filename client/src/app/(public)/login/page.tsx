@@ -9,7 +9,7 @@ import SEO from '@/components/common/SEO';
 const Login = () => {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const data = await login(email, password);
+      const data = await login(username, password);
       if (data.user.role === 'admin') router.push('/admin');
       else if (data.user.role === 'seller') router.push('/seller');
       else router.push('/');
@@ -46,10 +46,10 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ایمیل یا نام کاربری</label>
-            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200"
-              placeholder="your@email.com یا نام کاربری" required />
+              placeholder="نام کاربری" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>

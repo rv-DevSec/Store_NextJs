@@ -4,7 +4,7 @@ const config = require('../config');
 
 const VALID_HOST = new URL(config.clientUrl).host;
 
-exports.generateSitemap = async (req, res) => {
+exports.generateSitemap = async (req, res, next) => {
   try {
     const host = req.get('host');
     const baseUrl = host === VALID_HOST
@@ -51,6 +51,6 @@ ${urls.map((u) => `  <url>
     res.setHeader('Content-Type', 'application/xml');
     res.send(xml);
   } catch (err) {
-    res.status(500).send('خطا در تولید sitemap');
+    next(err);
   }
 };

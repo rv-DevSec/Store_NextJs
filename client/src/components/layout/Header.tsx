@@ -7,10 +7,14 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useCart } from '@/providers/CartProvider';
 import { toPersianNumber, formatPrice } from '@/lib/utils/numbers';
 import { cn } from '@/lib/utils/cn';
+import { useSettings } from '@/lib/hooks/useSettings';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const { cartItems, totalItems, totalPrice, cartOpen, setCartOpen, removeFromCart, updateQty } = useCart();
+  const { data: settingsData } = useSettings();
+  const logo = settingsData?.settings?.logo;
+  const siteName = settingsData?.settings?.siteName;
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -43,8 +47,9 @@ const Header = () => {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-bold text-primary hover:text-primary-light transition-colors duration-200">
-            قطعات یدکی خودرو
+          <Link href="/" className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden text-lg sm:text-xl font-bold text-primary hover:text-primary-light transition-colors duration-200">
+            {logo && <img src={logo} alt={siteName || 'قطعات یدکی خودرو'} className="h-12 sm:h-14 w-auto max-w-32 sm:max-w-44 object-contain shrink-0" />}
+            <span className="truncate min-w-0">{siteName || 'قطعات یدکی خودرو'}</span>
           </Link>
 
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
@@ -83,7 +88,7 @@ const Header = () => {
                 </button>
 
                 {cartOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-200 z-50 animate-scale-in origin-top-left max-h-[calc(100vh-6rem)] overflow-y-auto">
+                  <div className="absolute left-0 top-full mt-2 w-auto min-w-[16rem] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-200 z-50 animate-scale-in origin-top-left max-h-[calc(100vh-6rem)] overflow-y-auto">
                     <div className="p-4">
                       <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold">سبد خرید ({toPersianNumber(totalItems)})</h3>

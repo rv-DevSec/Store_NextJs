@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useProducts, useCars } from '@/lib/hooks/useProducts';
@@ -11,9 +12,30 @@ import ProductCard from '@/components/product/ProductCard';
 import { useHidePrices } from '@/lib/hooks/useSettings';
 import type { IProduct } from '@/types';
 
+const CARS_PER_PAGE_DESKTOP = 8;
+const CARS_PER_PAGE_MOBILE = 4;
+
 const Home = () => {
   const { data: featuredData, isLoading: loadingFeatured } = useProducts({ featured: 'true', limit: 6 });
   const { data: carsData } = useCars();
+  const [carCount, setCarCount] = useState(CARS_PER_PAGE_DESKTOP);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && carCount > CARS_PER_PAGE_MOBILE) {
+      setCarCount(CARS_PER_PAGE_MOBILE);
+    }
+    if (!isMobile && carCount < CARS_PER_PAGE_DESKTOP) {
+      setCarCount(CARS_PER_PAGE_DESKTOP);
+    }
+  }, [isMobile]);
   const { data: settingsData } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => {
@@ -170,25 +192,37 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {allCars.slice(0, 8).map((car, idx) => (
-                <Link
-                  key={car._id}
-                  href={`/products?car=${car._id}`}
-                  className="bg-white border border-gray-200 rounded-xl p-3 text-center hover:shadow-xl hover:-translate-y-1 hover:scale-[1.03] hover:border-primary transition-all duration-300 group animate-fade-in"
-                  style={{ animationDelay: `${idx * 40}ms` }}
-                >
-                  <div className="aspect-[4/3] bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 overflow-hidden group-hover:bg-gray-50 transition-colors duration-300">
-                    {car.image ? (
-                      <img src={car.image} alt={`${car.brand} ${car.model}`} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
-                    ) : (
-                      <CarIcon className="w-16 h-12 group-hover:scale-110 transition-transform duration-300" />
-                    )}
-                  </div>
-                  <h3 className="text-xs font-bold truncate group-hover:text-primary transition-colors duration-200">{car.brand} {car.model}</h3>
-                </Link>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {allCars.slice(0, carCount).map((car, idx) => (
+                  <Link
+                    key={car._id}
+                    href={`/products?car=${car._id}`}
+                    className="bg-white border border-gray-200 rounded-xl p-3 text-center hover:shadow-xl hover:-translate-y-1 hover:scale-[1.03] hover:border-primary transition-all duration-300 group animate-fade-in"
+                    style={{ animationDelay: `${idx * 40}ms` }}
+                  >
+                    <div className="aspect-[4/3] bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 overflow-hidden group-hover:bg-gray-50 transition-colors duration-300">
+                      {car.image ? (
+                        <img src={car.image} alt={car.brand && car.brand !== car.model ? `${car.brand} ${car.model}` : car.model} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
+                      ) : (
+                        <CarIcon className="w-16 h-12 group-hover:scale-110 transition-transform duration-300" />
+                      )}
+                    </div>
+                    <h3 className="text-xs font-bold truncate group-hover:text-primary transition-colors duration-200">{car.brand && car.brand !== car.model ? `${car.brand} ${car.model}` : car.model}</h3>
+                  </Link>
+                ))}
+              </div>
+              {carCount < allCars.length && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setCarCount((c) => c + (isMobile ? CARS_PER_PAGE_MOBILE : CARS_PER_PAGE_DESKTOP))}
+                    className="px-8 py-3 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition active:scale-95"
+                  >
+                    بیشتر
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

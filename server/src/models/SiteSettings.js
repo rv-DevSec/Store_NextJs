@@ -29,6 +29,8 @@ const siteSettingsSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
   },
   hidePrices: { type: Boolean, default: false },
+  logo: { type: String, default: '' },
+  siteName: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('SiteSettings', siteSettingsSchema);

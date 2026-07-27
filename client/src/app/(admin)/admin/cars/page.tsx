@@ -40,7 +40,7 @@ const AdminCars = () => {
       return;
     }
     const parts = name.trim().split(/\s+/);
-    const carBrand = parts[0];
+    const carBrand = parts.length > 1 ? parts[0] : '';
     const carModel = parts.slice(1).join(' ') || parts[0];
     const payload: Record<string, unknown> = { brand: carBrand, model: carModel };
     if (editingId) {
@@ -52,7 +52,7 @@ const AdminCars = () => {
 
   const handleEdit = (car: { _id: string; brand: string; model: string }) => {
     setEditingId(car._id);
-    setName(`${car.brand} ${car.model}`.trim());
+    setName(car.brand && car.brand !== car.model ? `${car.brand} ${car.model}`.trim() : car.model);
   };
 
   const handleCancel = () => {

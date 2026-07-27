@@ -13,6 +13,8 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     address: (s.address as string) || '',
     about: (s.about as string) || '',
     headerImage: (s.headerImage as string) || '',
+    logo: (s.logo as string) || '',
+    siteName: (s.siteName as string) || '',
     zarinpalEnabled: (s.zarinpal as Record<string, unknown>)?.enabled !== false,
     zarinpalMerchantId: (s.zarinpalMerchantId as string) || '',
     cardToCardActive: !!((s.cardToCard as Record<string, unknown>)?.active),
@@ -70,10 +72,27 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const { data: res } = await api.post('/upload/image', formData);
+      if (res?.url) {
+        setForm((prev) => ({ ...prev, logo: res.url }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSubmit = () => {
     saveMutation.mutate({
       phones: form.phones.filter(p => p.tel?.trim()), email: form.email, address: form.address, about: form.about,
       headerImage: form.headerImage,
+      logo: form.logo,
+      siteName: form.siteName || undefined,
       shippingPrice: form.shippingPrice ? Number(form.shippingPrice) : undefined,
       zarinpalMerchantId: form.zarinpalMerchantId,
       zarinpal: { enabled: form.zarinpalEnabled },
@@ -118,7 +137,32 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
           </div>
         </div>
 
+        <div className="border-b border-gray-200 pb-6">
+          <h3 className="font-bold mb-4">لوگوی سایت</h3>
+          <div className="flex items-center gap-3">
+            {form.logo ? (
+              <div className="relative w-28 h-16 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-2">
+                <img src={form.logo} alt="لوگو" className="max-w-full max-h-full object-contain" />
+                <button onClick={() => setForm((prev) => ({ ...prev, logo: '' }))}
+                  className="absolute top-1 left-1 w-5 h-5 bg-danger/80 text-white rounded-full text-xs flex items-center justify-center hover:bg-danger transition">×</button>
+              </div>
+            ) : (
+              <div className="w-28 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">بدون لوگو</div>
+            )}
+            <label className="px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm cursor-pointer hover:bg-primary/20 transition">
+              آپلود لوگو
+              <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleLogoUpload} />
+            </label>
+            <p className="text-xs text-gray-400">لوگوی سایت (جایگزین متن پیش‌فرض در هدر)</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">نام سایت</label>
+            <input type="text" name="siteName" value={form.siteName} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+          </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">شماره تلفن‌ها</label>
             <div className="space-y-2">

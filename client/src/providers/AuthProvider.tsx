@@ -10,7 +10,6 @@ interface AuthContextType {
   loading: boolean;
   login: (credential: string, password: string) => Promise<{ user: IUser; token: string; refreshToken: string }>;
   register: (userData: Record<string, unknown>) => Promise<{ user: IUser; token: string; refreshToken: string }>;
-  registerSeller: (userData: Record<string, unknown>) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   setUser: (user: IUser | null) => void;
 }
@@ -85,8 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('refreshToken', data.refreshToken);
         setUser(storedUser);
-      } catch (err) {
-        console.error('[AuthProvider] Token refresh failed:', err);
+      } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -101,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loading = !ready;
 
   const handleAuthResponse = (data: { user: IUser; token: string; refreshToken?: string }) => {
-    queryClient.clear();
+    queryClient.invalidateQueries();
     localStorage.setItem('token', data.token);
     if (data.refreshToken) {
       localStorage.setItem('refreshToken', data.refreshToken);
@@ -111,8 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (credential: string, password: string) => {
-    const payload = credential.includes('@') ? { email: credential } : { username: credential };
-    const { data } = await api.post('/auth/login', { ...payload, password });
+    const { data } = await api.post('/auth/login', { username: credential, password });
     handleAuthResponse(data);
     return data;
   };
@@ -120,11 +117,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: Record<string, unknown>) => {
     const { data } = await api.post('/auth/register', userData);
     handleAuthResponse(data);
-    return data;
-  };
-
-  const registerSeller = async (userData: Record<string, unknown>) => {
-    const { data } = await api.post('/auth/register/seller', userData);
     return data;
   };
 
@@ -145,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, registerSeller, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

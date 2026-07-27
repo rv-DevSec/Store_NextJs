@@ -44,7 +44,7 @@ const Cars = () => {
                   <CarIcon className="w-20 h-16 group-hover:scale-110 transition-transform duration-300" />
                 )}
               </div>
-              <h3 className="text-sm font-bold truncate group-hover:text-primary transition-colors">{car.brand} {car.model}</h3>
+              <h3 className="text-sm font-bold truncate group-hover:text-primary transition-colors">{car.brand && car.brand !== car.model ? `${car.brand} ${car.model}` : car.model}</h3>
             </Link>
           ))}
         </div>

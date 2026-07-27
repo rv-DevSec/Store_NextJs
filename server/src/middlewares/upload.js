@@ -63,7 +63,6 @@ const uploadWithValidation = (fieldName, maxCount) => {
   return async (req, res, next) => {
     uploadMiddleware(req, res, async (err) => {
       if (err) {
-        console.log('[UPLOAD_ERR]', err instanceof multer.MulterError ? 'MulterError' : 'Error', 'code:', err.code, 'message:', err.message);
         if (err instanceof multer.MulterError) {
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ success: false, message: 'حجم فایل نباید بیشتر از ۵ مگابایت باشد' });
@@ -79,7 +78,6 @@ const uploadWithValidation = (fieldName, maxCount) => {
           await validateFileContent(f.path);
         }
       } catch (validationErr) {
-        console.log('[UPLOAD_VALIDATION_ERR]', validationErr.message);
         for (const f of files) {
           fs.unlink(f.path, () => {});
         }

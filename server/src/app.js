@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const config = require('./config');
@@ -14,9 +15,13 @@ const sanitizeBody = require('./middlewares/sanitize');
 const routes = require('./routes');
 const { generateSitemap } = require('./controllers/sitemapController');
 
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason instanceof Error ? reason.message : reason);
+});
+
 const app = express();
 
-connectDB();
+let server;
 
 app.set('trust proxy', 1);
 app.use(helmet({
@@ -76,10 +81,38 @@ app.get('/sitemap.xml', globalLimiter, generateSitemap);
 
 app.use('/api', routes);
 
-// Next.js serves the frontend; Express only serves the API.
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: 'مسیر درخواستی یافت نشد' });
+});
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
-});
+const start = async () => {
+  await connectDB();
+  server = app.listen(config.port, () => {
+    console.log(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
+  });
+};
+
+start();
+
+const shutdown = async (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  if (server) {
+    server.close(async () => {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.error('Forced shutdown after timeout.');
+      process.exit(1);
+    }, 10000).unref();
+  } else {
+    await mongoose.connection.close(false);
+    process.exit(0);
+  }
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

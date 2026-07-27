@@ -28,6 +28,7 @@ const {
   createCar,
   updateCar,
   deleteCar,
+  getLoginLogs,
   createCoupon,
   getCoupons,
   updateCoupon,
@@ -65,6 +66,7 @@ const xlsxUpload = multer({
 router.use(protect, admin, adminLimiter);
 
 router.get('/stats', getStats);
+router.get('/login-logs', getLoginLogs);
 router.get('/orders', getAdminOrders);
 router.get('/products', getAdminProducts);
 

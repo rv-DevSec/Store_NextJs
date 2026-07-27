@@ -5,14 +5,14 @@ const Category = require('../models/Category');
 const Car = require('../models/Car');
 const Coupon = require('../models/Coupon');
 const Review = require('../models/Review');
+const LoginLog = require('../models/LoginLog');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { AppError } = require('../middlewares/errorHandler');
 const { Parser } = require('json2csv');
-
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../utils/escapeRegex');
 
 const PRODUCT_ALLOWED = ['name', 'slug', 'description', 'price', 'discountPrice', 'masterPrice', 'stock', 'brand', 'images', 'specs', 'compatibleCars', 'category', 'featured', 'isActive'];
 const pickProduct = (body) => { const o = {}; for (const k of PRODUCT_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
@@ -426,6 +426,10 @@ exports.updateCategory = async (req, res, next) => {
 
 exports.deleteCategory = async (req, res, next) => {
   try {
+    const productCount = await Product.countDocuments({ category: req.params.id });
+    if (productCount > 0) {
+      return next(new AppError('این دسته‌بندی دارای محصول است. ابتدا محصولات را به دسته دیگر منتقل کنید', 400));
+    }
     await Category.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'دسته‌بندی حذف شد' });
   } catch (err) {
@@ -472,6 +476,42 @@ exports.deleteCar = async (req, res, next) => {
   try {
     await Car.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'خودرو حذف شد' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/* ─── Login Logs ─── */
+
+exports.getLoginLogs = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const filter = {};
+    if (status && ['success', 'failed'].includes(status)) filter.status = status;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [logs, total] = await Promise.all([
+      LoginLog.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      LoginLog.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      logs,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (err) {
     next(err);
   }

@@ -77,9 +77,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addToCart = (product: IProduct, qty = 1) => {
+    if (!product) return;
+    if (qty > product.stock) return;
     setCartItems((prev) => {
       const existing = prev.find((item) => item._id === product._id);
       if (existing) {
+        if (existing.qty + qty > product.stock) return prev;
         return prev.map((item) =>
           item._id === product._id
             ? { ...item, qty: item.qty + qty }
@@ -91,7 +94,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         {
           _id: product._id,
           name: product.name,
-          price: (product as unknown as { cartPrice?: number }).cartPrice || product.discountPrice || product.price,
+          price: product.discountPrice || product.price,
           image: product.images?.[0] || '',
           qty,
           stock: product.stock,

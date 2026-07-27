@@ -1,8 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { AppError } = require('../middlewares/errorHandler');
-
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../utils/escapeRegex');
 
 const calcSellerPrice = (masterPrice, markupPercent) => {
   const raw = masterPrice * (1 + markupPercent / 100);

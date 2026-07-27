@@ -29,13 +29,12 @@ router.get('/:id', protect, [
   param('id').isMongoId().withMessage('شناسه سفارش نامعتبر است'),
   validate,
 ], getOrderById);
-router.put('/:id/payment-info', protect, (req, res, next) => { console.log('[A] before param validation'); next(); }, [
+router.put('/:id/payment-info', protect, [
   param('id').isMongoId().withMessage('شناسه سفارش نامعتبر است'),
-  (req, res, next) => { console.log('[B] after param chain, before validate'); next(); },
   validate,
-], (req, res, next) => { console.log('[C] before upload'); next(); }, upload('receipt'), (req, res, next) => { console.log('[D] after upload, req.file:', req.file ? req.file.filename : 'undefined', 'req.body:', JSON.stringify(req.body)); next(); }, [
+], upload('receipt'), [
   body('transactionId').optional().isString().trim().withMessage('شناسه تراکنش نامعتبر است'),
   validate,
-], (req, res, next) => { console.log('[E] before controller'); next(); }, updateOrderPaymentInfo);
+], updateOrderPaymentInfo);
 
 module.exports = router;

@@ -6,6 +6,7 @@ import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import { getFavorites } from '@/services/orderService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import { useHidePrices } from '@/lib/hooks/useSettings';
+import { useSettings } from '@/lib/hooks/useSettings';
 import type { IProduct } from '@/types';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
 
 const ProductCard = ({ product, idx = 0 }: Props) => {
   const hidePrices = useHidePrices();
+  const { data: settingsData } = useSettings();
+  const firstPhone = settingsData?.settings?.phones?.find((p: { tel: string }) => p.tel)?.tel;
   const { data: favData } = useQuery({
     queryKey: ['favorites'],
     queryFn: getFavorites,
@@ -45,9 +48,16 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
       <h3 className="text-sm font-bold group-hover:text-primary transition-colors duration-200 line-clamp-2">
         {product.name}
       </h3>
-      <div className="mt-2 flex items-baseline gap-2">
+      <div className="mt-2">
         {hidePrices ? (
-          <p className="text-xs font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+            <p className="text-[10px] text-amber-700 mb-1">جهت سفارش تماس بگیرید</p>
+            {firstPhone ? (
+              <span onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${firstPhone}`; }} className="text-sm font-bold text-primary tracking-wide cursor-pointer block" dir="ltr">{firstPhone}</span>
+            ) : (
+              <p className="text-xs font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+            )}
+          </div>
         ) : product.discountPrice ? (
           <>
             <p className="text-sm font-bold text-danger">{formatPrice(product.discountPrice)}</p>

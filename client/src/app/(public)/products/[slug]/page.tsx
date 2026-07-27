@@ -12,7 +12,7 @@ import { getFavorites } from '@/services/orderService';
 import { getProductReviews, createReview } from '@/services/reviewService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import ProductCard from '@/components/product/ProductCard';
-import { useHidePrices } from '@/lib/hooks/useSettings';
+import { useHidePrices, useSettings } from '@/lib/hooks/useSettings';
 import type { IProduct, IReview, ICategory, ICar } from '@/types';
 
 interface PopulatedProduct extends Omit<IProduct, 'category' | 'compatibleCars'> {
@@ -100,6 +100,8 @@ const ProductDetail = () => {
 
   const product = data?.product as PopulatedProduct | undefined;
   const hidePrices = useHidePrices();
+  const { data: settingsData } = useSettings();
+  const firstPhone = settingsData?.settings?.phones?.find((p: { tel: string }) => p.tel)?.tel;
 
   const categoryId = product?.category?._id || '';
   const { data: relatedData } = useProducts(
@@ -290,11 +292,8 @@ const ProductDetail = () => {
           )}
 
           <div className="flex items-baseline gap-3 mb-4">
-            {hidePrices ? (
-              <div className="space-y-1">
-                <p className="text-lg font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
-              </div>
-            ) : product.discountPrice ? (
+            {hidePrices ? null
+            : product.discountPrice ? (
               <>
                 <span className="text-3xl font-bold text-danger">{formatPrice(product.discountPrice)}</span>
                 <span className="text-lg text-gray-400 line-through">{formatPrice(product.price)}</span>
@@ -305,51 +304,69 @@ const ProductDetail = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3 mb-4">
-            {product.stock > 0 ? (
-              <span className="flex items-center gap-1.5 text-success text-sm">
-                <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                موجود در انبار
-              </span>
-            ) : (
-              <span className="text-danger text-sm flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-danger rounded-full" />
-                ناموجود
-              </span>
-            )}
-            {product.stock > 0 && product.stock <= 5 && (
-              <span className="text-warning text-sm bg-warning/10 px-2 py-0.5 rounded-full">
-                تنها <span className="font-bold">{toPersianNumber(product.stock)}</span> عدد باقی‌مانده
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden">
-              <button
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                className="px-4 py-2.5 hover:bg-gray-50 transition-all duration-200 active:bg-gray-100 font-medium"
-              >
-                -
-              </button>
-              <span className="px-5 py-2.5 border-x border-gray-300 font-bold min-w-[3rem] text-center">
-                {toPersianNumber(qty)}
-              </span>
-              <button
-                onClick={() => setQty(Math.min(product.stock, qty + 1))}
-                className="px-4 py-2.5 hover:bg-gray-50 transition-all duration-200 active:bg-gray-100 font-medium"
-              >
-                +
-              </button>
+          {hidePrices ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center my-6">
+              <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-800 mb-1">این محصول قابل سفارش آنلاین نیست</p>
+              <p className="text-xs text-gray-500 mb-4">برای ثبت سفارش با شماره زیر تماس بگیرید</p>
+              {firstPhone ? (
+                <a href={`tel:${firstPhone}`} className="text-xl font-bold text-primary tracking-wide" dir="ltr">{firstPhone}</a>
+              ) : (
+                <p className="text-lg font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
+              )}
             </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="flex-1 py-2.5 rounded-xl font-bold transition-all duration-200 text-sm active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
-            >
-              افزودن به سبد خرید
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                {product.stock > 0 ? (
+                  <span className="flex items-center gap-1.5 text-success text-sm">
+                    <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                    موجود در انبار
+                  </span>
+                ) : (
+                  <span className="text-danger text-sm flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-danger rounded-full" />
+                    ناموجود
+                  </span>
+                )}
+                {product.stock > 0 && product.stock <= 5 && (
+                  <span className="text-warning text-sm bg-warning/10 px-2 py-0.5 rounded-full">
+                    تنها <span className="font-bold">{toPersianNumber(product.stock)}</span> عدد باقی‌مانده
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setQty(Math.max(1, qty - 1))}
+                    className="px-4 py-2.5 hover:bg-gray-50 transition-all duration-200 active:bg-gray-100 font-medium"
+                  >
+                    -
+                  </button>
+                  <span className="px-5 py-2.5 border-x border-gray-300 font-bold min-w-[3rem] text-center">
+                    {toPersianNumber(qty)}
+                  </span>
+                  <button
+                    onClick={() => setQty(Math.min(product.stock, qty + 1))}
+                    className="px-4 py-2.5 hover:bg-gray-50 transition-all duration-200 active:bg-gray-100 font-medium"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="flex-1 py-2.5 rounded-xl font-bold transition-all duration-200 text-sm active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+                >
+                  افزودن به سبد خرید
+                </button>
+              </div>
+            </>
+          )}
 
           {product.description && (
             <div className="mb-6 p-4 bg-gray-50 rounded-xl">
@@ -400,7 +417,7 @@ const ProductDetail = () => {
                     onClick={() => router.push(`/products?car=${car._id}`)}
                     className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full hover:bg-blue-100 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow"
                   >
-                    {car.brand} {car.model}
+                    {car.brand && car.brand !== car.model ? `${car.brand} ${car.model}` : car.model}
                     {car.year ? <span> (<span className="font-bold">{toPersianNumber(car.year)}</span>)</span> : ''}
                   </button>
                 ))}

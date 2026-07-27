@@ -43,6 +43,7 @@ const CheckoutForm = () => {
   const addresses = addressesData?.addresses || [];
   const settings = settingsData?.settings;
   const zarinpalEnabled = settings?.zarinpal?.enabled !== false;
+  const hidePrices = settings?.hidePrices === true;
   const shippingCost = 0;
 
   const createAddressMutation = useMutation({
@@ -143,6 +144,21 @@ const CheckoutForm = () => {
   };
 
   const finalTotal = Math.max(0, totalPrice - couponDiscount + shippingCost);
+
+  if (hidePrices) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <SEO title="تسویه حساب" />
+        <p className="text-4xl mb-3">🔒</p>
+        <p className="text-gray-500 text-lg mb-4">سفارش‌گذاری آنلاین غیرفعال است</p>
+        <p className="text-gray-400 text-sm mb-4">برای ثبت سفارش با شماره‌های تماس فروشگاه هماهنگ کنید</p>
+        {settings?.phones?.filter((p: { tel: string }) => p.tel).map((p: { name?: string; tel: string }, i: number) => (
+          <p key={i} className="text-primary font-bold" dir="ltr"><a href={`tel:${p.tel}`}>{p.tel}</a></p>
+        ))}
+        <Link href="/products" className="text-primary hover:underline mt-4 inline-block">مشاهده محصولات</Link>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0 && !orderMutation.isSuccess) {
     return (

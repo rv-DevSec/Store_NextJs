@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const config = require('../config');
+const LoginLog = require('../models/LoginLog');
+const { validateEmailDomain } = require('../middlewares/validateEmail');
 const { AppError } = require('../middlewares/errorHandler');
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
@@ -36,6 +38,7 @@ const buildAuthResponse = (user, accessToken, refreshToken) => ({
   user: {
     _id: user._id,
     name: user.name,
+    username: user.username,
     email: user.email,
     phone: user.phone,
     role: user.role,
@@ -49,16 +52,24 @@ exports.register = async (req, res, next) => {
       return next(new AppError(errors.array()[0].msg, 400));
     }
 
-    const { name, email, phone, password } = req.body;
+    const { name, username, email, phone, password } = req.body;
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, ...(phone ? [{ phone }] : [])],
-    });
-    if (existingUser) {
-      return next(new AppError('کاربری با این ایمیل یا شماره موبایل قبلاً ثبت‌نام کرده است', 400));
+    if (!username) {
+      return next(new AppError('نام کاربری الزامی است', 400));
     }
 
-    const user = await User.create({ name, email, phone, password });
+    if (email && !validateEmailDomain(email)) {
+      return next(new AppError('ایمیل معتبر نیست', 400));
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }, ...(phone ? [{ phone }] : [])],
+    });
+    if (existingUser) {
+      return next(new AppError('کاربری با این نام کاربری، ایمیل یا شماره موبایل قبلاً ثبت‌نام کرده است', 400));
+    }
+
+    const user = await User.create({ name, username, email, phone, password });
     const accessToken = signAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
 
@@ -108,14 +119,22 @@ exports.login = async (req, res, next) => {
       return next(new AppError(errors.array()[0].msg, 400));
     }
 
-    const { email, password, username } = req.body;
+    const { username, password } = req.body;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    const userAgent = req.headers['user-agent'] || '';
 
-    const user = await User.findOne(username ? { username } : { email }).select('+password');
+    if (!username) {
+      return next(new AppError('نام کاربری الزامی است', 400));
+    }
+
+    const user = await User.findOne({ username }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
-      return next(new AppError('ایمیل یا رمز عبور اشتباه است', 401));
+      LoginLog.create({ email: username, ip, userAgent, status: 'failed', failReason: 'wrong_password' }).catch(() => {});
+      return next(new AppError('نام کاربری یا رمز عبور اشتباه است', 401));
     }
 
     if (!user.isActive) {
+      LoginLog.create({ user: user._id, email: username, role: user.role, ip, userAgent, status: 'failed', failReason: 'inactive' }).catch(() => {});
       return next(new AppError('حساب کاربری شما غیرفعال شده است', 403));
     }
 
@@ -126,6 +145,8 @@ exports.login = async (req, res, next) => {
 
     const accessToken = signAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
+
+    LoginLog.create({ user: user._id, email: username, role: user.role, ip, userAgent, status: 'success' }).catch(() => {});
 
     res.json(buildAuthResponse(user, accessToken, refreshToken));
   } catch (err) {
@@ -149,6 +170,7 @@ exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) return next(new AppError('ایمیل خود را وارد کنید', 400));
+    if (!validateEmailDomain(email)) return next(new AppError('ایمیل معتبر نیست', 400));
 
     const user = await User.findOne({ email });
     if (!user) {

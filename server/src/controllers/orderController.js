@@ -17,6 +17,11 @@ exports.createOrder = async (req, res, next) => {
       return next(new AppError('لطفاً تمام اطلاعات آدرس را وارد کنید', 400));
     }
 
+    const siteSettings = await SiteSettings.findOne();
+    if (siteSettings?.hidePrices) {
+      return next(new AppError('سفارش‌گذاری آنلاین موقتاً غیرفعال است', 400));
+    }
+
     let totalAmount = 0;
     const orderItems = [];
     const productIds = items.map(i => i.productId);

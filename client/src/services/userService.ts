@@ -5,7 +5,7 @@ export const getProfile = async () => {
   return data;
 };
 
-export const updateAddress = async (addresses: unknown[]) => {
-  const { data } = await api.put('/auth/addresses', { addresses });
+export const updateAddress = async (id: string, addressData: Record<string, unknown>) => {
+  const { data } = await api.put(`/addresses/${id}`, addressData);
   return data;
 };
