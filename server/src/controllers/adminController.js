@@ -712,6 +712,33 @@ exports.deleteSeller = async (req, res, next) => {
   }
 };
 
+exports.updateAdminProfile = async (req, res, next) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) return next(new AppError('کاربر یافت نشد', 404));
+
+    if (username && username !== user.username) {
+      const dup = await User.findOne({ username, _id: { $ne: user._id } }).lean();
+      if (dup) return next(new AppError('نام کاربری تکراری است', 400));
+      user.username = username;
+    }
+
+    if (newPassword) {
+      if (!currentPassword) return next(new AppError('رمز عبور فعلی الزامی است', 400));
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) return next(new AppError('رمز عبور فعلی اشتباه است', 400));
+      user.password = newPassword;
+    }
+
+    await user.save();
+    const updated = await User.findById(user._id);
+    res.json({ success: true, user: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
 /* ─── Master Prices ─── */
 
 exports.getMasterPrices = async (req, res, next) => {

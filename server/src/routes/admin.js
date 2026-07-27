@@ -42,6 +42,7 @@ const {
   createSeller,
   updateSeller,
   deleteSeller,
+  updateAdminProfile,
   getSellerOrders,
   updateSellerOrderStatus,
   deleteSellerOrder,
@@ -64,6 +65,13 @@ const xlsxUpload = multer({
 });
 
 router.use(protect, admin, adminLimiter);
+
+router.put('/profile', [
+  body('username').optional().notEmpty().withMessage('نام کاربری نمی‌تواند خالی باشد'),
+  body('newPassword').optional().isLength({ min: 6 }).withMessage('رمز عبور جدید باید حداقل ۶ کاراکتر باشد'),
+  body('currentPassword').optional().notEmpty().withMessage('رمز عبور فعلی الزامی است'),
+  validate,
+], updateAdminProfile);
 
 router.get('/stats', getStats);
 router.get('/login-logs', getLoginLogs);

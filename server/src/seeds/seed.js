@@ -24,12 +24,13 @@ const seedData = async () => {
     const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'Admin@123456';
     const admin = await User.create({
       name: 'مدیر سایت',
+      username: process.env.ADMIN_SEED_USERNAME || 'admin',
       phone: '09120000000',
       email: 'admin@store.com',
       password: adminPassword,
       role: 'admin',
     });
-    console.log(`Admin created: ${admin.email}`);
+    console.log(`Admin created: ${admin.email} (username: ${admin.username})`);
 
     const seller = await User.create({
       name: 'فروشنده نمونه',
