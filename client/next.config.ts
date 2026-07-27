@@ -18,7 +18,8 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    const apiOrigin = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/api.*$/, '');
+    const apiOrigin = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api.*$/, '');
+    const uploadsOrigin = process.env.NEXT_PUBLIC_UPLOADS_URL || apiOrigin || 'http://localhost:5000';
     return [
       {
         source: '/(.*)',
@@ -32,7 +33,7 @@ const nextConfig: NextConfig = {
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
             "style-src 'self' 'unsafe-inline'",
-            `img-src 'self' data: blob: ${apiOrigin}`,
+            `img-src 'self' data: blob: ${apiOrigin} ${uploadsOrigin}`,
             `connect-src 'self' ${apiOrigin}`,
             "font-src 'self' data:",
             "form-action 'self'",
@@ -51,9 +52,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'http',
-        hostname: 'localhost',
-        port: '5000',
-        pathname: '/uploads/**',
+        hostname: '**',
       },
     ],
   },

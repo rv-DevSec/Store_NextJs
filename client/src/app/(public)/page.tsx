@@ -10,6 +10,7 @@ import SEO from '@/components/common/SEO';
 import api from '@/lib/api';
 import ProductCard from '@/components/product/ProductCard';
 import { useHidePrices } from '@/lib/hooks/useSettings';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import type { IProduct } from '@/types';
 
 const CARS_PER_PAGE_DESKTOP = 8;
@@ -121,7 +122,7 @@ const Home = () => {
         className={`text-white ${settings?.headerImage ? 'relative overflow-hidden' : 'bg-gradient-to-l from-primary to-primary-dark'}`}
       >
         {settings?.headerImage && (
-          <img src={settings.headerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={toAbsoluteUploadUrl(settings.headerImage)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
         <div className={`relative ${settings?.headerImage ? 'bg-black/50' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">

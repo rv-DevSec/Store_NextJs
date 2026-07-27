@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSettings } from '@/services/productService';
 import api from '@/lib/api';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) => {
   const queryClient = useQueryClient();
@@ -122,7 +123,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
           <div className="flex items-center gap-3">
             {form.headerImage ? (
               <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-gray-200">
-                <img src={form.headerImage} alt="هدر" className="w-full h-full object-cover" />
+                <img src={toAbsoluteUploadUrl(form.headerImage)} alt="هدر" className="w-full h-full object-cover" />
                 <button onClick={() => setForm((prev) => ({ ...prev, headerImage: '' }))}
                   className="absolute top-1 left-1 w-5 h-5 bg-danger/80 text-white rounded-full text-xs flex items-center justify-center hover:bg-danger transition">×</button>
               </div>
@@ -142,7 +143,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
           <div className="flex items-center gap-3">
             {form.logo ? (
               <div className="relative w-28 h-16 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-2">
-                <img src={form.logo} alt="لوگو" className="max-w-full max-h-full object-contain" />
+                <img src={toAbsoluteUploadUrl(form.logo)} alt="لوگو" className="max-w-full max-h-full object-contain" />
                 <button onClick={() => setForm((prev) => ({ ...prev, logo: '' }))}
                   className="absolute top-1 left-1 w-5 h-5 bg-danger/80 text-white rounded-full text-xs flex items-center justify-center hover:bg-danger transition">×</button>
               </div>

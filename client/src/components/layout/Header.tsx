@@ -8,6 +8,7 @@ import { useCart } from '@/providers/CartProvider';
 import { toPersianNumber, formatPrice } from '@/lib/utils/numbers';
 import { cn } from '@/lib/utils/cn';
 import { useSettings } from '@/lib/hooks/useSettings';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -48,7 +49,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden text-lg sm:text-xl font-bold text-primary hover:text-primary-light transition-colors duration-200">
-            {logo && <img src={logo} alt={siteName || 'قطعات یدکی خودرو'} className="h-12 sm:h-14 w-auto max-w-32 sm:max-w-44 object-contain shrink-0" />}
+            {logo && <img src={toAbsoluteUploadUrl(logo)} alt={siteName || 'قطعات یدکی خودرو'} className="h-12 sm:h-14 w-auto max-w-32 sm:max-w-44 object-contain shrink-0" />}
             <span className="truncate min-w-0">{siteName || 'قطعات یدکی خودرو'}</span>
           </Link>
 
@@ -110,7 +111,7 @@ const Header = () => {
                               >
                                 <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 flex-shrink-0">
                                   {item.image ? (
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                                    <img src={toAbsoluteUploadUrl(item.image)} alt={item.name} className="w-full h-full object-cover rounded-lg" />
                                   ) : (
                                     <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
