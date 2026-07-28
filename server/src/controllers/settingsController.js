@@ -35,7 +35,7 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
-const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'siteName'];
+const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'siteName', 'socials'];
 const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor', 'logo', 'siteName'];
 const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 
@@ -48,7 +48,19 @@ exports.updateSettings = async (req, res, next) => {
     for (const key of Object.keys(req.body)) {
       if (ALLOWED_FIELDS.includes(key)) {
         const val = req.body[key];
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
+        if (key === 'socials' && val && typeof val === 'object' && !Array.isArray(val)) {
+          const socials = {};
+          for (const [name, cfg] of Object.entries(val)) {
+            if (['telegram', 'rubika', 'bale'].includes(name) && cfg && typeof cfg === 'object' && !Array.isArray(cfg)) {
+              const s = {};
+              if (typeof cfg.active === 'boolean') s.active = cfg.active;
+              if (typeof cfg.link === 'string') s.link = cfg.link;
+              if (typeof cfg.icon === 'string') s.icon = cfg.icon;
+              socials[name] = s;
+            }
+          }
+          settings[key] = socials;
+        } else if (val && typeof val === 'object' && !Array.isArray(val)) {
           const sanitized = {};
           for (const [k, v] of Object.entries(val)) {
             if (STRING_FIELDS.includes(k) && typeof v === 'string') sanitized[k] = v;

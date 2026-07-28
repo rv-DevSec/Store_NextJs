@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import BackToTop from '@/components/common/BackToTop';
-import WhatsAppButton from '@/components/common/WhatsAppButton';
+import ContactWidget from '@/components/common/ContactWidget';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import Header from '@/components/layout/ClientHeader';
 import TopBanner from '@/components/common/TopBanner';
@@ -32,7 +32,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </main>
       <Footer />
       <BackToTop />
-      <WhatsAppButton />
+      <ContactWidget />
     </div>
   );
 }

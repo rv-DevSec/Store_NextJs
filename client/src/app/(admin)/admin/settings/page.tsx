@@ -31,6 +31,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     festivalBtnText: ((s.festival as Record<string, unknown>)?.btnText as string) || 'مشاهده محصولات',
     festivalBgColor: ((s.festival as Record<string, unknown>)?.bgColor as string) || '#dc2626',
     hidePrices: (s.hidePrices as boolean) || false,
+    socials: (s.socials as Record<string, { active: boolean; link: string; icon: string }>) || {},
   });
 
   const saveMutation = useMutation({
@@ -111,6 +112,11 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
         bgColor: form.festivalBgColor,
       },
       hidePrices: form.hidePrices,
+      socials: {
+        telegram: { active: form.socials.telegram?.active || false, link: form.socials.telegram?.link || '', icon: form.socials.telegram?.icon || '' },
+        rubika: { active: form.socials.rubika?.active || false, link: form.socials.rubika?.link || '', icon: form.socials.rubika?.icon || '' },
+        bale: { active: form.socials.bale?.active || false, link: form.socials.bale?.link || '', icon: form.socials.bale?.icon || '' },
+      },
     });
   };
 
@@ -200,6 +206,67 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
             <textarea name="about" value={form.about} onChange={handleChange} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary resize-none" />
           </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="font-bold mb-4">شبکه‌های اجتماعی (پشتیبانی)</h3>
+          {['telegram', 'rubika', 'bale'].map((name) => {
+            const labels: Record<string, string> = { telegram: 'تلگرام', rubika: 'روبیکا', bale: 'بله' };
+            const s = form.socials[name] || { active: false, link: '', icon: '' };
+            return (
+              <div key={name} className="border border-gray-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-bold text-sm">{labels[name]}</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-xs text-gray-500">فعال</span>
+                    <input type="checkbox" checked={s.active}
+                      onChange={(e) => setForm((prev) => ({ ...prev, socials: { ...prev.socials, [name]: { ...prev.socials[name], active: e.target.checked } } }))}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+                  </label>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">لینک</label>
+                    <input type="text" value={s.link}
+                      onChange={(e) => setForm((prev) => ({ ...prev, socials: { ...prev.socials, [name]: { ...prev.socials[name], link: e.target.value } } }))}
+                      placeholder={`لینک ${labels[name]}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">آیکون</label>
+                    <div className="flex items-center gap-3">
+                      {s.icon ? (
+                        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-1">
+                          <img src={toAbsoluteUploadUrl(s.icon)} alt={labels[name]} className="max-w-full max-h-full object-contain" />
+                          <button onClick={() => setForm((prev) => ({ ...prev, socials: { ...prev.socials, [name]: { ...prev.socials[name], icon: '' } } }))}
+                            className="absolute top-0.5 left-0.5 w-4 h-4 bg-danger/80 text-white rounded-full text-[10px] flex items-center justify-center hover:bg-danger transition">×</button>
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-[10px]">بدون آیکون</div>
+                      )}
+                      <label className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs cursor-pointer hover:bg-primary/20 transition">
+                        آپلود آیکون
+                        <input type="file" accept="image/jpeg,image/png" className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const fd = new FormData();
+                            fd.append('image', file);
+                            try {
+                              const { data: res } = await api.post('/upload/image', fd);
+                              if (res?.url) setForm((prev) => ({ ...prev, socials: { ...prev.socials, [name]: { ...prev.socials[name], icon: res.url } } }));
+                            } catch { /* ignore */ }
+                          }} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-gray-500 mb-1">هزینه ارسال</label>
             <input type="number" name="shippingPrice" value={form.shippingPrice} onChange={handleChange}

@@ -16,7 +16,7 @@ const AdminProducts = () => {
   const [form, setForm] = useState({
     name: '', slug: '', price: '', discountPrice: '', stock: '', category: '',
     compatibleCars: [] as string[], description: '', specs: [] as { key: string; value: string }[],
-    images: [] as string[], newImages: [] as string[],
+    images: [] as string[], newImages: [] as string[], featured: false,
   });
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -67,7 +67,7 @@ const AdminProducts = () => {
     setShowForm(false);
     setEditingId(null);
     setError('');
-    setForm({ name: '', slug: '', price: '', discountPrice: '', stock: '', category: '', compatibleCars: [], description: '', specs: [], images: [], newImages: [] });
+    setForm({ name: '', slug: '', price: '', discountPrice: '', stock: '', category: '', compatibleCars: [], description: '', specs: [], images: [], newImages: [], featured: false });
   };
 
   const handleEdit = (product: Record<string, unknown>) => {
@@ -89,6 +89,7 @@ const AdminProducts = () => {
       specs: specList,
       images: Array.isArray(product.images) ? product.images : [],
       newImages: [],
+      featured: !!product.featured,
     });
     setShowForm(true);
   };
@@ -159,6 +160,7 @@ const AdminProducts = () => {
     };
     if (form.discountPrice) productData.discountPrice = Number(form.discountPrice);
     if (form.compatibleCars.length > 0) productData.compatibleCars = form.compatibleCars;
+    productData.featured = form.featured;
     const allImages = [...form.images, ...form.newImages];
     if (allImages.length > 0) productData.images = allImages;
     if (editingId) {
@@ -245,6 +247,12 @@ const AdminProducts = () => {
               <button onClick={addSpec} className="text-sm text-primary hover:underline">+ افزودن مشخصه</button>
             </div>
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.featured} onChange={(e) => setForm((p) => ({ ...p, featured: e.target.checked }))}
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+            <span className="text-sm text-gray-700">محصول ویژه</span>
+          </label>
 
           <div>
             <label className="block text-xs text-gray-500 mb-2">تصاویر</label>

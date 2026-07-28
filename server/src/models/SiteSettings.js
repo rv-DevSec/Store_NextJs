@@ -31,6 +31,14 @@ const siteSettingsSchema = new mongoose.Schema({
   hidePrices: { type: Boolean, default: false },
   logo: { type: String, default: '' },
   siteName: { type: String, default: '' },
+  socials: {
+    type: {
+      telegram: { active: { type: Boolean, default: false }, link: { type: String, default: '' }, icon: { type: String, default: '' } },
+      rubika: { active: { type: Boolean, default: false }, link: { type: String, default: '' }, icon: { type: String, default: '' } },
+      bale: { active: { type: Boolean, default: false }, link: { type: String, default: '' }, icon: { type: String, default: '' } },
+    },
+    default: {},
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('SiteSettings', siteSettingsSchema);

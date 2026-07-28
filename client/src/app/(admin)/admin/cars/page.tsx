@@ -40,8 +40,8 @@ const AdminCars = () => {
       return;
     }
     const parts = name.trim().split(/\s+/);
-    const carBrand = parts.length > 1 ? parts[0] : '';
-    const carModel = parts.slice(1).join(' ') || parts[0];
+    const carBrand = parts.length > 1 ? parts[0] : parts[0];
+    const carModel = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
     const payload: Record<string, unknown> = { brand: carBrand, model: carModel };
     if (editingId) {
       updateMutation.mutate({ id: editingId, car: payload });

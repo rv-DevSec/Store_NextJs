@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils/numbers';
 
@@ -24,6 +24,7 @@ const roleLabels: Record<string, string> = {
 const AdminLoginLogs = () => {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-login-logs', page, statusFilter],
@@ -38,9 +39,29 @@ const AdminLoginLogs = () => {
   const logs = data?.logs || [];
   const pagination = data?.pagination;
 
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      const { data: res } = await api.delete('/admin/login-logs');
+      return res;
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-login-logs'] });
+      alert(res.message);
+    },
+  });
+
   return (
     <div className="max-w-5xl">
-      <h1 className="text-2xl font-bold mb-6">لاگ ورود</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">لاگ ورود</h1>
+        <button
+          onClick={() => { if (confirm('همه لاگ‌ها پاک شوند؟')) clearMutation.mutate(); }}
+          disabled={clearMutation.isPending}
+          className="px-4 py-2 bg-danger/10 text-danger rounded-xl text-sm font-medium hover:bg-danger/20 transition disabled:opacity-50"
+        >
+          {clearMutation.isPending ? 'در حال پاک کردن...' : 'پاک کردن همه لاگ‌ها'}
+        </button>
+      </div>
 
       <div className="flex items-center gap-3 mb-4">
         <span className="text-sm text-gray-500">فیلتر وضعیت:</span>

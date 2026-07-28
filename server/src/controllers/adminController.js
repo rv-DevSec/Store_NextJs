@@ -445,8 +445,10 @@ exports.createCar = async (req, res, next) => {
     if (req.file) {
       data.image = `/uploads/${req.file.filename}`;
     }
-    if (!data.slug && data.brand && data.model) {
-      data.slug = `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase();
+    if (!data.slug && data.model) {
+      data.slug = data.brand
+        ? `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase()
+        : data.model.replace(/\s+/g, '-').toLowerCase();
     }
     const car = await Car.create(data);
     res.status(201).json({ success: true, car });
@@ -461,8 +463,10 @@ exports.updateCar = async (req, res, next) => {
     if (req.file) {
       data.image = `/uploads/${req.file.filename}`;
     }
-    if (!data.slug && data.brand && data.model) {
-      data.slug = `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase();
+    if (!data.slug && data.model) {
+      data.slug = data.brand
+        ? `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase()
+        : data.model.replace(/\s+/g, '-').toLowerCase();
     }
     const car = await Car.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
     if (!car) return next(new AppError('خودرو یافت نشد', 404));
@@ -517,7 +521,14 @@ exports.getLoginLogs = async (req, res, next) => {
   }
 };
 
-/* ─── Coupon CRUD ─── */
+exports.clearLoginLogs = async (req, res, next) => {
+  try {
+    const result = await LoginLog.deleteMany({});
+    res.json({ success: true, message: `لاگ‌های ورود پاک شدند (${result.deletedCount} مورد)` });
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.createCoupon = async (req, res, next) => {
   try {

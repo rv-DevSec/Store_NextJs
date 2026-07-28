@@ -29,6 +29,7 @@ const {
   updateCar,
   deleteCar,
   getLoginLogs,
+  clearLoginLogs,
   createCoupon,
   getCoupons,
   updateCoupon,
@@ -75,6 +76,7 @@ router.put('/profile', [
 
 router.get('/stats', getStats);
 router.get('/login-logs', getLoginLogs);
+router.delete('/login-logs', clearLoginLogs);
 router.get('/orders', getAdminOrders);
 router.get('/products', getAdminProducts);
 
@@ -166,7 +168,7 @@ router.delete('/categories/:id', [
 
 router.post('/cars', [
   upload('image'),
-  body('brand').notEmpty().withMessage('برند خودرو الزامی است'),
+  body('brand').optional().notEmpty().withMessage('برند نمی‌تواند خالی باشد'),
   body('model').notEmpty().withMessage('مدل خودرو الزامی است'),
   body('year').optional().isNumeric().withMessage('سال باید عدد باشد'),
   validate,

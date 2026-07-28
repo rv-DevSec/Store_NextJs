@@ -26,7 +26,10 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        NEXT_PUBLIC_API_URL: 'http://localhost:5000/api',
+        NEXT_PUBLIC_UPLOADS_URL: '',
+        NEXT_PUBLIC_SITE_URL: 'http://localhost:3000'
       },
       error_file: '/var/log/pm2/store-frontend-error.log',
       out_file: '/var/log/pm2/store-frontend-out.log',
