@@ -32,6 +32,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     festivalBgColor: ((s.festival as Record<string, unknown>)?.bgColor as string) || '#dc2626',
     hidePrices: (s.hidePrices as boolean) || false,
     socials: (s.socials as Record<string, { active: boolean; link: string; icon: string }>) || {},
+    distributor: (s.distributor as { active: boolean; title: string; brands: { name: string; logo: string }[] }) || { active: false, title: 'نمایندگی پخش عمده هرینگتون و ویژن', brands: [] },
   });
 
   const saveMutation = useMutation({
@@ -116,6 +117,11 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
         telegram: { active: form.socials.telegram?.active || false, link: form.socials.telegram?.link || '', icon: form.socials.telegram?.icon || '' },
         rubika: { active: form.socials.rubika?.active || false, link: form.socials.rubika?.link || '', icon: form.socials.rubika?.icon || '' },
         bale: { active: form.socials.bale?.active || false, link: form.socials.bale?.link || '', icon: form.socials.bale?.icon || '' },
+      },
+      distributor: {
+        active: form.distributor.active,
+        title: form.distributor.title || 'نمایندگی پخش عمده هرینگتون و ویژن',
+        brands: form.distributor.brands.filter(b => b.name.trim()),
       },
     });
   };
@@ -264,6 +270,86 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
               </div>
             );
           })}
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="font-bold mb-4">نمایندگی برندها</h3>
+          <div className="space-y-4">
+            <label className="flex items-center gap-3">
+              <input type="checkbox" checked={form.distributor.active}
+                onChange={(e) => setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, active: e.target.checked } }))}
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+              <span className="text-sm">فعال (نمایش در صفحه اصلی)</span>
+            </label>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">عنوان بخش</label>
+              <input type="text" value={form.distributor.title}
+                onChange={(e) => setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, title: e.target.value } }))}
+                className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-2">برندها</label>
+              <div className="space-y-3">
+                {form.distributor.brands.map((brand, idx) => (
+                  <div key={idx} className="flex items-center gap-3 border border-gray-200 rounded-xl p-3">
+                    <div className="flex-1">
+                      <input type="text" value={brand.name}
+                        onChange={(e) => {
+                          const brands = [...form.distributor.brands];
+                          brands[idx] = { ...brands[idx], name: e.target.value };
+                          setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, brands } }));
+                        }}
+                        placeholder="نام برند"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {brand.logo ? (
+                        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-1">
+                          <img src={toAbsoluteUploadUrl(brand.logo)} alt={brand.name} className="max-w-full max-h-full object-contain" />
+                          <button onClick={() => {
+                            const brands = [...form.distributor.brands];
+                            brands[idx] = { ...brands[idx], logo: '' };
+                            setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, brands } }));
+                          }}
+                            className="absolute top-0.5 left-0.5 w-4 h-4 bg-danger/80 text-white rounded-full text-[10px] flex items-center justify-center hover:bg-danger transition">×</button>
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-[10px]">لوگو</div>
+                      )}
+                      <label className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs cursor-pointer hover:bg-primary/20 transition whitespace-nowrap">
+                        آپلود
+                        <input type="file" accept="image/jpeg,image/png" className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const fd = new FormData();
+                            fd.append('image', file);
+                            try {
+                              const { data: res } = await api.post('/upload/image', fd);
+                              if (res?.url) {
+                                const brands = [...form.distributor.brands];
+                                brands[idx] = { ...brands[idx], logo: res.url };
+                                setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, brands } }));
+                              }
+                            } catch { /* ignore */ }
+                          }} />
+                      </label>
+                    </div>
+                    <button onClick={() => {
+                      const brands = form.distributor.brands.filter((_, i) => i !== idx);
+                      setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, brands } }));
+                    }}
+                      className="text-danger text-sm hover:underline whitespace-nowrap">حذف</button>
+                  </div>
+                ))}
+                <button onClick={() => {
+                  const brands = [...form.distributor.brands, { name: '', logo: '' }];
+                  setForm((prev) => ({ ...prev, distributor: { ...prev.distributor, brands } }));
+                }}
+                  className="text-primary text-sm hover:underline">+ افزودن برند</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

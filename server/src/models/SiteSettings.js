@@ -39,6 +39,17 @@ const siteSettingsSchema = new mongoose.Schema({
     },
     default: {},
   },
+  distributor: {
+    type: {
+      active: { type: Boolean, default: false },
+      title: { type: String, default: 'نمایندگی پخش عمده هرینگتون و ویژن' },
+      brands: [{
+        name: { type: String, default: '' },
+        logo: { type: String, default: '' },
+      }],
+    },
+    default: {},
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('SiteSettings', siteSettingsSchema);

@@ -1,4 +1,9 @@
 const errorHandler = (err, req, res, next) => {
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {})[0] || 'فیلد';
+    return res.status(400).json({ success: false, message: `این ${field} قبلاً استفاده شده است` });
+  }
+
   const statusCode = err.statusCode || 500;
   const isDev = process.env.NODE_ENV === 'development';
 

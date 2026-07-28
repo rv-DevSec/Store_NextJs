@@ -17,6 +17,19 @@ const escapeRegex = require('../utils/escapeRegex');
 const PRODUCT_ALLOWED = ['name', 'slug', 'description', 'price', 'discountPrice', 'masterPrice', 'stock', 'brand', 'images', 'specs', 'compatibleCars', 'category', 'featured', 'isActive'];
 const pickProduct = (body) => { const o = {}; for (const k of PRODUCT_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
 
+const resolveSlug = async (slug, excludeId) => {
+  const filter = { slug };
+  if (excludeId) filter._id = { $ne: excludeId };
+  const existing = await Product.findOne(filter);
+  if (!existing) return slug;
+  let counter = 1;
+  let newSlug;
+  do {
+    newSlug = `${slug}-${counter++}`;
+  } while (await Product.findOne({ slug: newSlug, ...(excludeId ? { _id: { $ne: excludeId } } : {}) }));
+  return newSlug;
+};
+
 const CATEGORY_ALLOWED = ['name', 'slug', 'description', 'icon', 'order'];
 const pickCategory = (body) => { const o = {}; for (const k of CATEGORY_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
 
@@ -345,6 +358,7 @@ exports.createProduct = async (req, res, next) => {
     if (data.price) data.price = Number(data.price);
     if (data.discountPrice) data.discountPrice = Number(data.discountPrice);
     if (data.stock) data.stock = Number(data.stock);
+    if (data.slug) data.slug = await resolveSlug(data.slug);
     const product = await Product.create(data);
     res.status(201).json({ success: true, product });
   } catch (err) {
@@ -361,6 +375,7 @@ exports.updateProduct = async (req, res, next) => {
     if (data.price) data.price = Number(data.price);
     if (data.discountPrice) data.discountPrice = Number(data.discountPrice);
     if (data.stock) data.stock = Number(data.stock);
+    if (data.slug) data.slug = await resolveSlug(data.slug, req.params.id);
     const product = await Product.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
     if (!product) return next(new AppError('محصول یافت نشد', 404));
     res.json({ success: true, product });
@@ -384,12 +399,7 @@ exports.duplicateProduct = async (req, res, next) => {
     const original = await Product.findById(req.params.id).lean();
     if (!original) return next(new AppError('محصول یافت نشد', 404));
 
-    const baseSlug = original.slug.replace(/-\d+$/, '');
-    let newSlug = `${baseSlug}-${Date.now()}`;
-    let count = 1;
-    while (await Product.findOne({ slug: newSlug })) {
-      newSlug = `${baseSlug}-${Date.now()}-${count++}`;
-    }
+    const newSlug = await resolveSlug(`${original.slug}-copy`);
 
     const { _id, createdAt, updatedAt, __v, ...data } = original;
     data.name = `${original.name} (کپی)`;

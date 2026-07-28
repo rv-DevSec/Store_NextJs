@@ -35,7 +35,7 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
-const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'siteName', 'socials'];
+const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'siteName', 'socials', 'distributor'];
 const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor', 'logo', 'siteName'];
 const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 
@@ -48,7 +48,15 @@ exports.updateSettings = async (req, res, next) => {
     for (const key of Object.keys(req.body)) {
       if (ALLOWED_FIELDS.includes(key)) {
         const val = req.body[key];
-        if (key === 'socials' && val && typeof val === 'object' && !Array.isArray(val)) {
+        if (key === 'distributor' && val && typeof val === 'object' && !Array.isArray(val)) {
+          const d = {};
+          if (typeof val.active === 'boolean') d.active = val.active;
+          if (typeof val.title === 'string') d.title = val.title;
+          if (Array.isArray(val.brands)) {
+            d.brands = val.brands.filter(b => b && typeof b === 'object' && typeof b.name === 'string').map(b => ({ name: b.name, logo: typeof b.logo === 'string' ? b.logo : '' }));
+          }
+          settings[key] = d;
+        } else if (key === 'socials' && val && typeof val === 'object' && !Array.isArray(val)) {
           const socials = {};
           for (const [name, cfg] of Object.entries(val)) {
             if (['telegram', 'rubika', 'bale'].includes(name) && cfg && typeof cfg === 'object' && !Array.isArray(cfg)) {
