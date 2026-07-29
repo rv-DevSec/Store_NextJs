@@ -15,6 +15,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     about: (s.about as string) || '',
     headerImage: (s.headerImage as string) || '',
     logo: (s.logo as string) || '',
+    favicon: (s.favicon as string) || '',
     siteName: (s.siteName as string) || '',
     zarinpalEnabled: (s.zarinpal as Record<string, unknown>)?.enabled !== false,
     zarinpalMerchantId: (s.zarinpalMerchantId as string) || '',
@@ -95,6 +96,7 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
       phones: form.phones.filter(p => p.tel?.trim()), email: form.email, address: form.address, about: form.about,
       headerImage: form.headerImage,
       logo: form.logo,
+      favicon: form.favicon || undefined,
       siteName: form.siteName || undefined,
       shippingPrice: form.shippingPrice ? Number(form.shippingPrice) : undefined,
       zarinpalMerchantId: form.zarinpalMerchantId,
@@ -167,6 +169,36 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
               <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleLogoUpload} />
             </label>
             <p className="text-xs text-gray-400">لوگوی سایت (جایگزین متن پیش‌فرض در هدر)</p>
+          </div>
+        </div>
+
+        <div className="border-b border-gray-200 pb-6">
+          <h3 className="font-bold mb-4">فاوآیکون (Favicon)</h3>
+          <div className="flex items-center gap-3">
+            {form.favicon ? (
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-1">
+                <img src={toAbsoluteUploadUrl(form.favicon)} alt="فاوآیکون" className="max-w-full max-h-full object-contain" />
+                <button onClick={() => setForm((prev) => ({ ...prev, favicon: '' }))}
+                  className="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-danger/80 text-white rounded-full text-[8px] flex items-center justify-center hover:bg-danger transition">×</button>
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-[10px]">بدون</div>
+            )}
+            <label className="px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm cursor-pointer hover:bg-primary/20 transition">
+              آپلود فاوآیکون
+              <input type="file" accept="image/x-icon,image/png,image/jpeg" className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const fd = new FormData();
+                  fd.append('image', file);
+                  try {
+                    const { data: res } = await api.post('/upload/image', fd);
+                    if (res?.url) setForm((prev) => ({ ...prev, favicon: res.url }));
+                  } catch { /* ignore */ }
+                }} />
+            </label>
+            <p className="text-xs text-gray-400">آیکون برگه مرورگر (فرمت ico, png, jpg)</p>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getAdminStats, getAdminOrders, getAdminProducts } from '@/services/orderService';
+import { getAdminStats, getAdminOrders, getLowStockProducts } from '@/services/orderService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import Link from 'next/link';
 
@@ -12,7 +12,7 @@ const statusLabel: Record<string, string> = {
 const AdminDashboard = () => {
   const { data: statsData } = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats });
   const { data: recentOrders } = useQuery({ queryKey: ['admin-orders-recent'], queryFn: () => getAdminOrders({ limit: '5', page: '1' }) });
-  const { data: lowStock } = useQuery({ queryKey: ['admin-products-low-stock'], queryFn: getAdminProducts });
+  const { data: lowStock } = useQuery({ queryKey: ['admin-products-low-stock'], queryFn: () => getLowStockProducts(5) });
 
   const stats = statsData?.stats;
 
@@ -62,7 +62,7 @@ const AdminDashboard = () => {
             <Link href="/admin/products" className="text-sm text-primary hover:underline">مشاهده همه</Link>
           </div>
           <div className="space-y-2">
-            {lowStock?.products?.filter((p: { stock: number }) => p.stock <= 5).slice(0, 5).map((product: { _id: string; name: string; stock: number; price: number }) => (
+            {lowStock?.products?.slice(0, 5).map((product: { _id: string; name: string; stock: number; price: number }) => (
               <Link key={product._id} href={`/admin/products`} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition">
                 <div>
                   <p className="text-sm font-medium truncate max-w-[200px]">{product.name}</p>

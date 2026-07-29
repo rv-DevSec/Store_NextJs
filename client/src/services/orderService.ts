@@ -80,6 +80,11 @@ export const getAdminProducts = async () => {
   return data;
 };
 
+export const getLowStockProducts = async (threshold = 10) => {
+  const { data } = await api.get(`/admin/products/low-stock?threshold=${threshold}`);
+  return data;
+};
+
 export const adminCreateProduct = async (product: Record<string, unknown>) => {
   const { data } = await api.post('/admin/products', product);
   return data;

@@ -30,6 +30,7 @@ const siteSettingsSchema = new mongoose.Schema({
   },
   hidePrices: { type: Boolean, default: false },
   logo: { type: String, default: '' },
+  favicon: { type: String, default: '' },
   siteName: { type: String, default: '' },
   socials: {
     type: {

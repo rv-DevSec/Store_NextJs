@@ -32,6 +32,7 @@ router.put('/', protect, admin, [
   body('festival.bgColor').optional().isString().trim(),
   body('hidePrices').optional().isBoolean(),
   body('logo').optional().isString().trim(),
+  body('favicon').optional().isString().trim(),
   body('siteName').optional().isString().trim(),
   body('distributor').optional().isObject(),
   body('distributor.active').optional().isBoolean(),

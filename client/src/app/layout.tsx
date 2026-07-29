@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Providers } from '@/providers';
+import FaviconInjector from '@/components/common/FaviconInjector';
 import './globals.css';
 
 const siteTitle = 'فروشگاه قطعات یدکی خودرو';
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
       <body className="min-h-screen flex flex-col bg-gray-50 text-gray-900" suppressHydrationWarning>
         <Providers>
+          <FaviconInjector />
           {children}
         </Providers>
       </body>

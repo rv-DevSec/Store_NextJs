@@ -177,7 +177,29 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="bg-gray-50 py-12">
+      {settings?.distributor?.active && settings?.distributor?.brands?.length > 0 && (
+        <section className="py-14">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-2xl font-bold text-center mb-10">{settings.distributor.title || 'نمایندگی پخش عمده هرینگتون و ویژن'}</h2>
+            <div className="flex flex-wrap items-center justify-center gap-10">
+              {settings.distributor.brands.map((brand: { name: string; logo?: string }, idx: number) => (
+                <div key={idx} className="flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
+                  <div className="w-36 h-36 bg-white rounded-2xl border-2 border-gray-100 flex items-center justify-center p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                    {brand.logo ? (
+                      <img src={toAbsoluteUploadUrl(brand.logo)} alt={brand.name} className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <span className="text-gray-400 text-sm font-bold text-center">{brand.name}</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold text-gray-700">{brand.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="bg-gradient-to-l from-primary/5 to-primary/10 py-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">خودروی خود را انتخاب کنید</h2>
@@ -227,28 +249,6 @@ const Home = () => {
           )}
         </div>
       </section>
-
-      {settings?.distributor?.active && settings?.distributor?.brands?.length > 0 && (
-        <section className="bg-gradient-to-l from-primary to-primary-dark text-white py-14">
-          <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{settings.distributor.title || 'نمایندگی پخش عمده هرینگتون و ویژن'}</h2>
-            <div className="flex flex-wrap items-center justify-center gap-8">
-              {settings.distributor.brands.map((brand: { name: string; logo?: string }, idx: number) => (
-                <div key={idx} className="flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
-                  <div className="w-36 h-36 bg-white rounded-2xl flex items-center justify-center p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                    {brand.logo ? (
-                      <img src={toAbsoluteUploadUrl(brand.logo)} alt={brand.name} className="max-w-full max-h-full object-contain" />
-                    ) : (
-                      <span className="text-gray-400 text-sm font-bold text-center">{brand.name}</span>
-                    )}
-                  </div>
-                  <span className="text-sm font-bold text-white/90">{brand.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       <section className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4">
