@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { useCategories } from '@/lib/hooks/useProducts';
 import { toPersianNumber } from '@/lib/utils/numbers';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import SEO from '@/components/common/SEO';
 
 const getIcon = (cat: { icon?: string; name: string }) => {
   if (cat.icon?.startsWith('/uploads/')) {
-    return <img src={cat.icon} alt="" className="w-12 h-12 mx-auto object-contain group-hover:scale-110 transition-transform duration-300" />;
+    return <img src={toAbsoluteUploadUrl(cat.icon)} alt="" className="w-12 h-12 mx-auto object-contain group-hover:scale-110 transition-transform duration-300" />;
   }
   return <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{cat.icon || '📦'}</span>;
 };

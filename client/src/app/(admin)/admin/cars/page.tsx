@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminCreateCar, adminUpdateCar, adminDeleteCar } from '@/services/orderService';
 import { getCars } from '@/services/productService';
 import api from '@/lib/api';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const AdminCars = () => {
   const queryClient = useQueryClient();
@@ -110,7 +111,7 @@ const AdminCars = () => {
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
                 {car.image ? (
-                  <img src={car.image} alt="" className="w-full h-full object-contain" />
+                  <img src={toAbsoluteUploadUrl(car.image)} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10l6-4 6 4m-12 0v6a2 2 0 002 2h8a2 2 0 002-2v-6M5 10l6 4 6-4" />

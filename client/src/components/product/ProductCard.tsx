@@ -7,6 +7,7 @@ import { getFavorites } from '@/services/orderService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import { useHidePrices } from '@/lib/hooks/useSettings';
 import { useSettings } from '@/lib/hooks/useSettings';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import type { IProduct } from '@/types';
 
 interface Props {
@@ -34,7 +35,7 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
     >
       <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-300 overflow-hidden group-hover:bg-gray-50 transition-colors duration-300 relative">
         {product.images?.[0] ? (
-          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <img src={toAbsoluteUploadUrl(product.images[0])} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
         ) : (
           <svg className="w-12 h-12 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

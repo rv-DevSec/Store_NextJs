@@ -34,6 +34,8 @@ router.put('/', protect, admin, [
   body('logo').optional().isString().trim(),
   body('favicon').optional().isString().trim(),
   body('siteName').optional().isString().trim(),
+  body('heroTitle').optional().isString().trim(),
+  body('heroSubtitle').optional().isString().trim(),
   body('distributor').optional().isObject(),
   body('distributor.active').optional().isBoolean(),
   body('distributor.title').optional().isString().trim(),

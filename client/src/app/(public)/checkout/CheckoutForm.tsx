@@ -8,6 +8,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { createOrder, requestPayment, validateCoupon, getAddresses, createAddress } from '@/services/orderService';
 import { getSettings } from '@/services/productService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import SEO from '@/components/common/SEO';
 import Link from 'next/link';
 
@@ -311,7 +312,7 @@ const CheckoutForm = () => {
               {cartItems.map((item) => (
                 <div key={item._id} className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                    {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : (
+                    {item.image ? <img src={toAbsoluteUploadUrl(item.image)} alt="" className="w-full h-full object-cover" /> : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

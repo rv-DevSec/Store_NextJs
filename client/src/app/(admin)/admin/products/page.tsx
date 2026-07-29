@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages } from '@/services/orderService';
 import { getCategories, getCars } from '@/services/productService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const emptySpec = { key: '', value: '' };
 
@@ -259,14 +260,14 @@ const AdminProducts = () => {
             <div className="flex flex-wrap gap-3 mb-3">
               {form.images.map((url) => (
                 <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
                   <button onClick={() => removeImage(url)}
                     className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center">×</button>
                 </div>
               ))}
               {form.newImages.map((url) => (
                 <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
                   <button onClick={() => removeNewImage(url)}
                     className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center">×</button>
                 </div>
@@ -322,7 +323,7 @@ const AdminProducts = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        {product.images?.[0] ? <img src={product.images[0]} alt="" className="w-full h-full object-cover" /> : (
+                        {product.images?.[0] ? <img src={toAbsoluteUploadUrl(product.images[0])} alt="" className="w-full h-full object-cover" /> : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

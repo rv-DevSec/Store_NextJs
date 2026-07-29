@@ -17,6 +17,8 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
     logo: (s.logo as string) || '',
     favicon: (s.favicon as string) || '',
     siteName: (s.siteName as string) || '',
+    heroTitle: (s.heroTitle as string) || '',
+    heroSubtitle: (s.heroSubtitle as string) || '',
     zarinpalEnabled: (s.zarinpal as Record<string, unknown>)?.enabled !== false,
     zarinpalMerchantId: (s.zarinpalMerchantId as string) || '',
     cardToCardActive: !!((s.cardToCard as Record<string, unknown>)?.active),
@@ -115,6 +117,8 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
         bgColor: form.festivalBgColor,
       },
       hidePrices: form.hidePrices,
+      heroTitle: form.heroTitle || undefined,
+      heroSubtitle: form.heroSubtitle || undefined,
       socials: {
         telegram: { active: form.socials.telegram?.active || false, link: form.socials.telegram?.link || '', icon: form.socials.telegram?.icon || '' },
         rubika: { active: form.socials.rubika?.active || false, link: form.socials.rubika?.link || '', icon: form.socials.rubika?.icon || '' },
@@ -206,6 +210,18 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
           <div className="col-span-2">
             <label className="block text-xs text-gray-500 mb-1">نام سایت</label>
             <input type="text" name="siteName" value={form.siteName} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">عنوان بخش قهرمان (Hero) صفحه اصلی</label>
+            <input type="text" name="heroTitle" value={form.heroTitle} onChange={handleChange}
+              placeholder="فروشگاه تخصصی قطعات یدکی خودرو"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">زیرعنوان بخش قهرمان (Hero) صفحه اصلی</label>
+            <input type="text" name="heroSubtitle" value={form.heroSubtitle} onChange={handleChange}
+              placeholder="انواع قطعات یدکی خودروهای ایرانی و خارجی با بهترین کیفیت و قیمت"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
           </div>
           <div>

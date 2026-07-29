@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderById, updateOrderStatus, downloadInvoice } from '@/services/orderService';
 import { formatPrice, toPersianNumber, formatDateTime } from '@/lib/utils/numbers';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import Link from 'next/link';
 
 const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
@@ -159,7 +160,7 @@ const AdminOrderDetail = () => {
                 <div key={idx} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
                   {item.image && (
                     <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={toAbsoluteUploadUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -193,8 +194,8 @@ const AdminOrderDetail = () => {
               <h2 className="font-bold mb-4">{order.type === 'seller' ? 'رسید پرداخت' : 'پرداخت کارت به کارت'}</h2>
               {receiptImage ? (
                 <div className="space-y-4">
-                  <a href={receiptImage} target="_blank" rel="noopener noreferrer">
-                    <img src={receiptImage} alt="رسید پرداخت" className="w-full rounded-lg border border-gray-200" />
+                  <a href={toAbsoluteUploadUrl(receiptImage)} target="_blank" rel="noopener noreferrer">
+                    <img src={toAbsoluteUploadUrl(receiptImage)} alt="رسید پرداخت" className="w-full rounded-lg border border-gray-200" />
                   </a>
                   <p className="text-xs text-gray-500">
                     وضعیت: {paymentStatusLabel[order.paymentStatus]}

@@ -35,7 +35,7 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
-const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'favicon', 'siteName', 'socials', 'distributor'];
+const ALLOWED_FIELDS = ['headerImage', 'phones', 'email', 'address', 'about', 'shippingPrice', 'zarinpalMerchantId', 'festival', 'cardToCard', 'zarinpal', 'hidePrices', 'logo', 'favicon', 'siteName', 'heroTitle', 'heroSubtitle', 'socials', 'distributor'];
 const STRING_FIELDS = ['headerImage', 'email', 'address', 'about', 'zarinpalMerchantId', 'bankName', 'cardNumber', 'accountHolder', 'shaba', 'title', 'subtitle', 'btnText', 'bgColor', 'logo', 'siteName'];
 const NUMERIC_FIELDS = ['products', 'shippingPrice'];
 

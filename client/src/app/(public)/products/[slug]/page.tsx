@@ -13,6 +13,7 @@ import { getProductReviews, createReview } from '@/services/reviewService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import ProductCard from '@/components/product/ProductCard';
 import { useHidePrices, useSettings } from '@/lib/hooks/useSettings';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import type { IProduct, IReview, ICategory, ICar } from '@/types';
 
 interface PopulatedProduct extends Omit<IProduct, 'category' | 'compatibleCars'> {
@@ -227,7 +228,7 @@ const ProductDetail = () => {
           <div className="aspect-square bg-gray-100 rounded-2xl flex items-center justify-center text-gray-300 overflow-hidden relative">
             {images[selectedImage] ? (
               <img
-                src={images[selectedImage]}
+                src={toAbsoluteUploadUrl(images[selectedImage])}
                 alt={product.name}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 loading="lazy"
@@ -256,7 +257,7 @@ const ProductDetail = () => {
                   }`}
                 >
                   {img ? (
-                    <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <img src={toAbsoluteUploadUrl(img)} alt="" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-full h-full bg-gray-100" />
                   )}

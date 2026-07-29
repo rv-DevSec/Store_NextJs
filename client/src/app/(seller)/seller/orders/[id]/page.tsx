@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { updateOrderPaymentInfo } from '@/services/orderService';
 import { formatPrice, toPersianNumber, formatDateTime } from '@/lib/utils/numbers';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const statusLabel: Record<string, string> = {
   in_progress: 'در حال پردازش', calling: 'در حال تماس', called: 'تماس گرفته شد',
@@ -120,7 +121,7 @@ const SellerOrderDetail = () => {
               <div key={idx} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
                 {item.image && (
                   <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={toAbsoluteUploadUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -156,8 +157,8 @@ const SellerOrderDetail = () => {
         {receiptImage && (
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <h3 className="font-bold mb-3">رسید پرداخت</h3>
-            <a href={receiptImage} target="_blank" rel="noopener noreferrer">
-              <img src={receiptImage} alt="رسید پرداخت" className="max-h-64 rounded-lg border border-gray-200" />
+            <a href={toAbsoluteUploadUrl(receiptImage)} target="_blank" rel="noopener noreferrer">
+              <img src={toAbsoluteUploadUrl(receiptImage)} alt="رسید پرداخت" className="max-h-64 rounded-lg border border-gray-200" />
             </a>
             <p className="text-xs text-gray-500 mt-2">
               {order.paymentStatus === 'paid' ? '✅ تأیید شده' : '⏳ در انتظار تأیید مدیر'}

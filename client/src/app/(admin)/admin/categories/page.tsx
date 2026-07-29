@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminCreateCategory, adminUpdateCategory, adminDeleteCategory, uploadImage } from '@/services/orderService';
 import { getCategories } from '@/services/productService';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 
 const EMOJIS = ['🔧', '🚗', '⚙️', '🔩', '🛞', '🛢️', '🔋', '🏎️', '📦', '🚚', '🧰', '🛠️', '⛽', '🔌', '🪫', '🧽', '💡', '🪞', '🪟', '🔊'];
 
@@ -129,7 +130,7 @@ const AdminCategories = () => {
             <div className="flex items-center gap-3">
               {cat.icon ? (
                 cat.icon.startsWith('/uploads/')
-                  ? <img src={cat.icon} alt="" className="w-8 h-8 object-contain rounded" />
+                  ? <img src={toAbsoluteUploadUrl(cat.icon)} alt="" className="w-8 h-8 object-contain rounded" />
                   : <span className="text-xl">{cat.icon}</span>
               ) : (
                 <span className="text-xl text-gray-300">📦</span>

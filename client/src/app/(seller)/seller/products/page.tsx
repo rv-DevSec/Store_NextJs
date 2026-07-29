@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import api from '@/lib/api';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import Link from 'next/link';
 
 interface CartItem {
@@ -153,7 +154,7 @@ const SellerProducts = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         {product.images?.[0] ? (
-                          <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                          <img src={toAbsoluteUploadUrl(product.images[0])} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

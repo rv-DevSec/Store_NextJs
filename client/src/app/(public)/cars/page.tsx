@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getCars } from '@/services/productService';
 import CarIcon from '@/components/ui/CarIcon';
+import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import SEO from '@/components/common/SEO';
 
 const Cars = () => {
@@ -39,7 +40,7 @@ const Cars = () => {
             >
               <div className="aspect-[4/3] bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400 overflow-hidden group-hover:bg-gray-50 transition-colors">
                 {car.image ? (
-                  <img src={car.image} alt={car.model} className="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform duration-500" />
+                  <img src={toAbsoluteUploadUrl(car.image)} alt={car.model} className="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform duration-500" />
                 ) : (
                   <CarIcon className="w-20 h-16 group-hover:scale-110 transition-transform duration-300" />
                 )}
