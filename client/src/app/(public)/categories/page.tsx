@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCategories } from '@/lib/hooks/useProducts';
 import { toPersianNumber } from '@/lib/utils/numbers';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
+import { SITE_URL } from '@/lib/seo';
 import SEO from '@/components/common/SEO';
 
 const getIcon = (cat: { icon?: string; name: string }) => {
@@ -19,7 +20,16 @@ const Categories = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <SEO title="دسته‌بندی‌ها" description="دسته‌بندی محصولات فروشگاه قطعات یدکی خودرو" />
+      <SEO
+        title="دسته‌بندی‌ها"
+        description="دسته‌بندی محصولات فروشگاه قطعات یدکی خودرو"
+        canonicalPath="/categories"
+        jsonLd={{
+          '@type': 'CollectionPage',
+          name: 'دسته‌بندی محصولات',
+          url: SITE_URL + '/categories',
+        }}
+      />
       <h1 className="text-2xl font-bold mb-6">دسته‌بندی محصولات</h1>
 
       {isLoading ? (

@@ -5,19 +5,30 @@ import ContactWidget from '@/components/common/ContactWidget';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import Header from '@/components/layout/ClientHeader';
 import TopBanner from '@/components/common/TopBanner';
-
-const siteTitle = 'فروشگاه قطعات یدکی خودرو';
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, DEFAULT_OG_IMAGE } from '@/lib/seo';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: siteTitle,
-    template: `%s | ${siteTitle}`,
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: 'فروشگاه تخصصی قطعات یدکی خودروهای ایرانی و خارجی با بهترین کیفیت و قیمت',
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
-    siteName: siteTitle,
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

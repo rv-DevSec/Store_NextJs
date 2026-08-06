@@ -6,6 +6,7 @@ import { useProducts, useCategories, useCars } from '@/lib/hooks/useProducts';
 import { toPersianNumber } from '@/lib/utils/numbers';
 import ProductCard from '@/components/product/ProductCard';
 import SEO from '@/components/common/SEO';
+import { SITE_URL } from '@/lib/seo';
 import type { IProduct, ICategory } from '@/types';
 
 const sortOptions = [
@@ -100,7 +101,16 @@ const ProductsContent = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <SEO title="محصولات" description="لیست محصولات فروشگاه قطعات یدکی خودرو" />
+        <SEO
+          title="محصولات"
+          description="لیست محصولات فروشگاه قطعات یدکی خودرو"
+          canonicalPath="/products"
+          jsonLd={{
+            '@type': 'CollectionPage',
+            name: 'محصولات',
+            url: SITE_URL + '/products',
+          }}
+        />
         <h1 className="text-2xl font-bold">محصولات</h1>
         {search && <p className="text-gray-500 mt-1">نتایج جستجو برای &quot;{search}&quot;</p>}
         {pagination.total > 0 && (

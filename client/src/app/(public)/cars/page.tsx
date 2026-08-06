@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getCars } from '@/services/productService';
 import CarIcon from '@/components/ui/CarIcon';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
+import { SITE_URL } from '@/lib/seo';
 import SEO from '@/components/common/SEO';
 
 const Cars = () => {
@@ -21,7 +22,16 @@ const Cars = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <SEO title="خودروها" description="لیست خودروهای سازگار با قطعات فروشگاه" />
+      <SEO
+        title="خودروها"
+        description="لیست خودروهای سازگار با قطعات فروشگاه"
+        canonicalPath="/cars"
+        jsonLd={{
+          '@type': 'CollectionPage',
+          name: 'خودروهای سازگار',
+          url: SITE_URL + '/cars',
+        }}
+      />
       <h1 className="text-2xl font-bold mb-6">خودروها</h1>
 
       {isLoading ? (

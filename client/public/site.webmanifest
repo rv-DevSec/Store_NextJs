@@ -1,0 +1,23 @@
+{
+  "name": "فروشگاه قطعات یدکی خودرو",
+  "short_name": "قطعات یدکی",
+  "description": "فروشگاه تخصصی قطعات یدکی خودروهای ایرانی و خارجی",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

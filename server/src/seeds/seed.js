@@ -45,12 +45,13 @@ const seedData = async () => {
 
     const customer = await User.create({
       name: 'کاربر نمونه',
+      username: 'user1',
       phone: '09132222222',
       email: 'user@store.com',
       password: 'User@123456',
       role: 'user',
     });
-    console.log(`Customer created: ${customer.email}`);
+    console.log(`Customer created: ${customer.email} (username: ${customer.username})`);
 
     const categories = await Category.insertMany([
       { name: 'موتور و پیشرانه', slug: 'engine', description: 'قطعات موتور خودرو', order: 1 },

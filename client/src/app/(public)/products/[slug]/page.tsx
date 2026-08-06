@@ -14,6 +14,7 @@ import FavoriteButton from '@/components/common/FavoriteButton';
 import ProductCard from '@/components/product/ProductCard';
 import { useHidePrices, useSettings } from '@/lib/hooks/useSettings';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
+import { SITE_URL, toAbsoluteUrl } from '@/lib/seo';
 import type { IProduct, IReview, ICategory, ICar } from '@/types';
 
 interface PopulatedProduct extends Omit<IProduct, 'category' | 'compatibleCars'> {
@@ -203,7 +204,31 @@ const ProductDetail = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
-      <SEO title={product.name} description={product.description} />
+      <SEO
+        title={product.name}
+        description={product.description}
+        type="product"
+        canonicalPath={`/products/${product.slug}`}
+        image={product.images?.[0]}
+        jsonLd={[
+          {
+            '@type': 'Product',
+            name: product.name,
+            description: product.description,
+            image: (product.images || []).map((img) => toAbsoluteUrl(img)),
+            sku: product._id,
+            mpn: product._id,
+            category: typeof product.category === 'object' && product.category ? product.category.name : undefined,
+            offers: {
+              '@type': 'Offer',
+              priceCurrency: 'IRR',
+              price: String(product.discountPrice || product.price),
+              availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+              url: `${SITE_URL}/products/${product.slug}`,
+            },
+          },
+        ]}
+      />
       <nav className="text-sm text-gray-500 mb-6 animate-slide-down">
         <button onClick={() => router.push('/')} className="hover:text-primary transition-colors duration-200">خانه</button>
         <span className="mx-2 text-gray-300">/</span>

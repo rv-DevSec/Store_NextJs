@@ -12,6 +12,7 @@ import ProductCard from '@/components/product/ProductCard';
 import { useHidePrices } from '@/lib/hooks/useSettings';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
 import useInView from '@/lib/hooks/useInView';
+import { SITE_URL, SITE_NAME } from '@/lib/seo';
 import type { IProduct } from '@/types';
 
 const CARS_PER_PAGE_DESKTOP = 8;
@@ -85,7 +86,27 @@ const Home = () => {
 
   return (
     <div>
-      <SEO />
+      <SEO
+        canonicalPath="/"
+        jsonLd={[
+          {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+            logo: `${SITE_URL}/icon.png`,
+            contactPoint: phones.filter((p) => p.tel).map((p) => ({
+              '@type': 'ContactPoint',
+              telephone: p.tel,
+              contactType: 'sales',
+            })),
+          },
+          {
+            '@type': 'WebSite',
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+        ]}
+      />
 
       {/* ── Festival Banner ── */}
       {festival?.active && (
@@ -183,7 +204,11 @@ const Home = () => {
                 </AnimateOnScroll>
                 <AnimateOnScroll delay={200}>
                   <p className="text-base md:text-xl text-blue-200/90 max-w-xl leading-relaxed mb-8 mx-auto md:mx-0">
-                    {settings?.heroSubtitle || 'انواع قطعات یدکی خودروهای ایرانی و خارجی با بهترین کیفیت و قیمت'}
+                    {settings?.heroSubtitle ? (
+                      settings.heroSubtitle
+                    ) : (
+                      <>انواع <strong className="font-semibold text-white">قطعات یدکی خودرو</strong>های ایرانی و خارجی با <strong className="font-semibold text-white">بهترین کیفیت</strong> و قیمت مناسب</>
+                    )}
                   </p>
                 </AnimateOnScroll>
                 <AnimateOnScroll delay={300}>

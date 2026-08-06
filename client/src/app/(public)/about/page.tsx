@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getSettings } from '@/services/productService';
+import { SITE_URL } from '@/lib/seo';
 import SEO from '@/components/common/SEO';
 
 const AboutPage = () => {
@@ -28,7 +29,16 @@ const AboutPage = () => {
 
   return (
     <div>
-      <SEO title="درباره ما" description={((s.about as string) || '').slice(0, 160) || 'اطلاعات فروشگاه قطعات یدکی خودرو'} />
+      <SEO
+        title="درباره ما"
+        description={((s.about as string) || '').slice(0, 160) || 'اطلاعات فروشگاه قطعات یدکی خودرو'}
+        canonicalPath="/about"
+        jsonLd={{
+          '@type': 'AboutPage',
+          name: 'درباره ما',
+          url: SITE_URL + '/about',
+        }}
+      />
 
       <section className="bg-gradient-to-l from-primary to-primary-dark text-white">
         <div className="max-w-4xl mx-auto px-4 py-16 md:py-24 text-center">

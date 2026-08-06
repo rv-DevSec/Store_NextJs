@@ -1,29 +1,47 @@
 import type { Metadata } from 'next';
 import { Providers } from '@/providers';
 import FaviconInjector from '@/components/common/FaviconInjector';
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import './globals.css';
 
-const siteTitle = 'فروشگاه قطعات یدکی خودرو';
-const siteDescription = 'فروشگاه تخصصی قطعات یدکی خودروهای ایرانی و خارجی با بهترین کیفیت و قیمت';
-
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: siteTitle,
-    template: `%s | ${siteTitle}`,
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: siteDescription,
-  icons: { icon: '/favicon.ico' },
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: '/',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png', sizes: '256x256' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.png',
+  },
+  manifest: '/site.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: SITE_NAME,
+  },
   openGraph: {
-    title: siteTitle,
-    description: siteDescription,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
     type: 'website',
     locale: 'fa_IR',
-    siteName: siteTitle,
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: siteTitle,
-    description: siteDescription,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
   robots: {
     index: true,
