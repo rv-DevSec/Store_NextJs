@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages } from '@/services/orderService';
+import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx } from '@/services/orderService';
 import { getCategories, getCars } from '@/services/productService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
@@ -17,10 +17,12 @@ const AdminProducts = () => {
   const [form, setForm] = useState({
     name: '', slug: '', price: '', discountPrice: '', stock: '', category: '',
     compatibleCars: [] as string[], description: '', specs: [] as { key: string; value: string }[],
-    images: [] as string[], newImages: [] as string[], featured: false,
+    images: [] as string[], newImages: [] as string[], featured: false, orderable: false,
   });
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadingXlsx, setUploadingXlsx] = useState(false);
+  const [importResult, setImportResult] = useState('');
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
   const [inlinePrice, setInlinePrice] = useState('');
   const [inlineMasterPrice, setInlineMasterPrice] = useState('');
@@ -68,7 +70,7 @@ const AdminProducts = () => {
     setShowForm(false);
     setEditingId(null);
     setError('');
-    setForm({ name: '', slug: '', price: '', discountPrice: '', stock: '', category: '', compatibleCars: [], description: '', specs: [], images: [], newImages: [], featured: false });
+    setForm({ name: '', slug: '', price: '', discountPrice: '', stock: '', category: '', compatibleCars: [], description: '', specs: [], images: [], newImages: [], featured: false, orderable: false });
   };
 
   const handleEdit = (product: Record<string, unknown>) => {
@@ -91,6 +93,7 @@ const AdminProducts = () => {
       images: Array.isArray(product.images) ? product.images : [],
       newImages: [],
       featured: !!product.featured,
+      orderable: product.orderable === true,
     });
     setShowForm(true);
   };
@@ -112,6 +115,25 @@ const AdminProducts = () => {
   };
 
   const addSpec = () => setForm((p) => ({ ...p, specs: [...p.specs, { key: '', value: '' }] }));
+
+  const handleXlsxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingXlsx(true);
+    setError('');
+    setImportResult('');
+    try {
+      const res = await uploadMasterPriceXlsx(file);
+      setImportResult(res.message || 'آپلود با موفقیت انجام شد');
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    } catch (err) {
+      const serverMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(serverMsg || (err as Error)?.message || 'خطا در آپلود فایل');
+    } finally {
+      setUploadingXlsx(false);
+      e.target.value = '';
+    }
+  };
 
   const updateSpec = (idx: number, field: 'key' | 'value', val: string) => {
     setForm((p) => {
@@ -162,6 +184,7 @@ const AdminProducts = () => {
     if (form.discountPrice) productData.discountPrice = Number(form.discountPrice);
     if (form.compatibleCars.length > 0) productData.compatibleCars = form.compatibleCars;
     productData.featured = form.featured;
+    productData.orderable = form.orderable;
     const allImages = [...form.images, ...form.newImages];
     if (allImages.length > 0) productData.images = allImages;
     if (editingId) {
@@ -175,11 +198,24 @@ const AdminProducts = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">محصولات</h1>
-        <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition">
-          + محصول جدید
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => document.getElementById('xlsx-upload-input')?.click()} disabled={uploadingXlsx}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
+            {uploadingXlsx ? 'در حال آپلود...' : 'آپلود اکسل'}
+          </button>
+          <input id="xlsx-upload-input" type="file" accept=".xlsx,.xls" className="hidden" onChange={handleXlsxUpload} disabled={uploadingXlsx} />
+          <button onClick={() => { resetForm(); setShowForm(true); }}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition">
+            + محصول جدید
+          </button>
+        </div>
       </div>
+
+      {importResult && (
+        <div className="bg-success/10 text-success border border-success/20 rounded-xl px-4 py-3 text-sm mb-4">
+          {importResult}
+        </div>
+      )}
 
       <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="جستجوی محصول..." className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm mb-4 focus:outline-none focus:border-primary" />
@@ -255,6 +291,12 @@ const AdminProducts = () => {
             <span className="text-sm text-gray-700">محصول ویژه</span>
           </label>
 
+          <label className="flex items-center gap-2 cursor-pointer" title="در حالت «مخفی کردن قیمت‌ها»، این محصول همچنان قابل سفارش آنلاین خواهد بود">
+            <input type="checkbox" checked={form.orderable} onChange={(e) => setForm((p) => ({ ...p, orderable: e.target.checked }))}
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+            <span className="text-sm text-gray-700">قابل سفارش آنلاین (در حالت مخفی کردن قیمت‌ها)</span>
+          </label>
+
           <div>
             <label className="block text-xs text-gray-500 mb-2">تصاویر</label>
             <div className="flex flex-wrap gap-3 mb-3">
@@ -318,7 +360,7 @@ const AdminProducts = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((product: { _id: string; name: string; price: number; discountPrice?: number; masterPrice?: number; stock: number; category?: { name: string }; images?: string[] }) => (
+              {filtered.map((product: { _id: string; name: string; price: number; discountPrice?: number; masterPrice?: number; stock: number; category?: { name: string }; images?: string[]; orderable?: boolean }) => (
                 <tr key={product._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -332,6 +374,9 @@ const AdminProducts = () => {
                         )}
                       </div>
                       <span className="font-medium truncate max-w-[200px]">{product.name}</span>
+                      {product.orderable === true && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-success/10 text-success flex-shrink-0">قابل سفارش آنلاین</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">

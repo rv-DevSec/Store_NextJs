@@ -98,6 +98,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           image: product.images?.[0] || '',
           qty,
           stock: product.stock,
+          orderable: product.orderable === true,
         },
       ];
     });

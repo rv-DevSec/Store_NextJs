@@ -14,7 +14,7 @@ const { AppError } = require('../middlewares/errorHandler');
 const { Parser } = require('json2csv');
 const escapeRegex = require('../utils/escapeRegex');
 
-const PRODUCT_ALLOWED = ['name', 'slug', 'description', 'price', 'discountPrice', 'masterPrice', 'stock', 'brand', 'images', 'specs', 'compatibleCars', 'category', 'featured', 'isActive'];
+const PRODUCT_ALLOWED = ['name', 'slug', 'description', 'price', 'discountPrice', 'masterPrice', 'stock', 'brand', 'images', 'specs', 'compatibleCars', 'category', 'featured', 'isActive', 'orderable'];
 const pickProduct = (body) => { const o = {}; for (const k of PRODUCT_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
 
 const resolveSlug = async (slug, excludeId) => {
@@ -815,6 +815,11 @@ exports.uploadMasterPriceXlsx = async (req, res, next) => {
     const nameToProduct = Object.fromEntries(allProducts.map(p => [p.name.trim().toLowerCase(), p._id]));
 
     const defaultCategory = await Category.findOne().select('_id').lean();
+
+    if (!defaultCategory) {
+      fs.unlink(filePath, () => {});
+      return next(new AppError('هیچ دسته‌بندی فعالی وجود ندارد. ابتدا در بخش دسته‌بندی‌ها یک دسته ایجاد کنید', 400));
+    }
 
     let imported = 0;
     let skipped = 0;

@@ -146,7 +146,7 @@ const CheckoutForm = () => {
 
   const finalTotal = Math.max(0, totalPrice - couponDiscount + shippingCost);
 
-  if (hidePrices) {
+  if (hidePrices && cartItems.some((i) => i.orderable === false)) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         <SEO title="تسویه حساب" />

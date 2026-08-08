@@ -139,7 +139,7 @@ const Home = () => {
           {festival.products?.length > 0 && (
             <div className="max-w-7xl mx-auto px-4 pb-6">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {festival.products.map((p: { _id?: string; slug: string; name: string; images?: string[]; price: number; discountPrice?: number }, idx: number) => (
+                {festival.products.map((p: { _id?: string; slug: string; name: string; images?: string[]; price: number; discountPrice?: number; orderable?: boolean }, idx: number) => (
                   <Link
                     key={p._id || idx}
                     href={`/products/${p.slug}`}
@@ -157,7 +157,7 @@ const Home = () => {
                     </div>
                     <h3 className="text-xs font-bold truncate text-gray-800 group-hover:text-primary transition-colors duration-200">{p.name}</h3>
                     <div className="mt-1">
-                      {hidePrices ? (
+                      {hidePrices && p.orderable !== true ? (
                         <p className="text-xs font-bold text-primary">برای اطلاع از قیمت تماس بگیرید</p>
                       ) : p.discountPrice ? (
                         <p className="text-xs font-bold text-danger">{formatPrice(p.discountPrice)}</p>

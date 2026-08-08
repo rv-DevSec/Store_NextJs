@@ -185,6 +185,13 @@ export const adminDeleteSeller = async (id: string) => {
   return data;
 };
 
+export const uploadMasterPriceXlsx = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/admin/master-prices/upload', formData);
+  return data;
+};
+
 export const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('image', file);

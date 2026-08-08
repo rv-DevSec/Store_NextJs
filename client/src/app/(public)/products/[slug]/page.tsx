@@ -102,6 +102,7 @@ const ProductDetail = () => {
 
   const product = data?.product as PopulatedProduct | undefined;
   const hidePrices = useHidePrices();
+  const showPrice = !hidePrices || product?.orderable === true;
   const { data: settingsData } = useSettings();
   const firstPhone = settingsData?.settings?.phones?.find((p: { tel: string }) => p.tel)?.tel;
 
@@ -318,7 +319,7 @@ const ProductDetail = () => {
           )}
 
           <div className="flex items-baseline gap-3 mb-4">
-            {hidePrices ? null
+            {!showPrice ? null
             : product.discountPrice ? (
               <>
                 <span className="text-3xl font-bold text-danger">{formatPrice(product.discountPrice)}</span>
@@ -330,7 +331,7 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {hidePrices ? (
+          {!showPrice ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center my-6">
               <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

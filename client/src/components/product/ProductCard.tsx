@@ -25,6 +25,7 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('token'),
   });
   const favSet = new Set((favData?.products || []).map((p: IProduct) => p._id));
+  const showPrice = !hidePrices || product.orderable === true;
 
   return (
     <Link
@@ -50,7 +51,7 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
         {product.name}
       </h3>
       <div className="mt-2">
-        {hidePrices ? (
+        {!showPrice ? (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
             <p className="text-[10px] text-amber-700 mb-1">جهت سفارش تماس بگیرید</p>
             {firstPhone ? (
@@ -68,13 +69,13 @@ const ProductCard = ({ product, idx = 0 }: Props) => {
           <p className="text-sm font-bold">{formatPrice(product.price)}</p>
         )}
       </div>
-      {product.stock <= 5 && product.stock > 0 && (
+      {showPrice && product.stock <= 5 && product.stock > 0 && (
         <p className="text-xs text-warning mt-1 flex items-center gap-1">
           <span className="w-1.5 h-1.5 bg-warning rounded-full animate-pulse" />
           تنها {toPersianNumber(product.stock)} عدد باقی‌مانده
         </p>
       )}
-      {product.stock === 0 && (
+      {showPrice && product.stock === 0 && (
         <p className="text-xs text-danger mt-1 flex items-center gap-1">
           <span className="w-1.5 h-1.5 bg-danger rounded-full" />
           ناموجود

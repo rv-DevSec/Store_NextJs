@@ -18,9 +18,6 @@ exports.createOrder = async (req, res, next) => {
     }
 
     const siteSettings = await SiteSettings.findOne();
-    if (siteSettings?.hidePrices) {
-      return next(new AppError('سفارش‌گذاری آنلاین موقتاً غیرفعال است', 400));
-    }
 
     let totalAmount = 0;
     const orderItems = [];
@@ -37,6 +34,9 @@ exports.createOrder = async (req, res, next) => {
       }
       if (!product.isActive) {
         return next(new AppError(`محصول ${product.name} غیرفعال است`, 400));
+      }
+      if (siteSettings?.hidePrices && product.orderable !== true) {
+        return next(new AppError(`محصول «${product.name}» قابل سفارش آنلاین نیست. برای ثبت سفارش با فروشگاه تماس بگیرید`, 400));
       }
       if (product.stock < item.qty) {
         return next(new AppError(`موجودی ${product.name} کافی نیست`, 400));

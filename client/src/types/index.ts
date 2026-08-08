@@ -41,6 +41,7 @@ export interface IProduct {
   numReviews: number;
   isActive: boolean;
   featured: boolean;
+  orderable?: boolean;
   createdAt: string;
   updatedAt: string;
   cartPrice?: number;
@@ -200,4 +201,5 @@ export interface CartItem {
   image: string;
   qty: number;
   stock: number;
+  orderable?: boolean;
 }
