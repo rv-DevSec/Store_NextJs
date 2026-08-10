@@ -10,12 +10,12 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon.png?v=2",
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "/apple-touch-icon.png",
+      "src": "/apple-touch-icon.png?v=2",
       "sizes": "180x180",
       "type": "image/png"
     }

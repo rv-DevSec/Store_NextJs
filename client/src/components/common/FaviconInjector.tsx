@@ -16,14 +16,19 @@ const FaviconInjector = () => {
 
   useEffect(() => {
     if (!favicon) return;
-    let link = document.querySelector<HTMLLinkElement>("link[rel*='icon']");
-    if (!link) {
-      link = document.createElement('link');
+    const href = toAbsoluteUploadUrl(favicon);
+    if (!href) return;
+    let updated = false;
+    document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']").forEach((link) => {
+      link.href = href;
+      updated = true;
+    });
+    if (!updated) {
+      const link = document.createElement('link');
       link.rel = 'icon';
+      link.href = href;
       document.head.appendChild(link);
     }
-    const href = toAbsoluteUploadUrl(favicon);
-    if (href) link.href = href;
   }, [favicon]);
 
   return null;

@@ -504,11 +504,13 @@ const SettingsForm = ({ settings: s }: { settings: Record<string, unknown> }) =>
           </div>
         </div>
 
-        <button onClick={handleSubmit} disabled={saveMutation.isPending}
-          className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
-          {saveMutation.isPending ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
-        </button>
-        {saveMutation.isSuccess && <p className="text-xs text-success">تنظیمات با موفقیت ذخیره شد</p>}
+        <div className="sticky bottom-0 z-10 -mx-6 -mb-6 px-6 py-4 bg-white/95 backdrop-blur border-t border-gray-200 flex items-center gap-3">
+          <button onClick={handleSubmit} disabled={saveMutation.isPending}
+            className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
+            {saveMutation.isPending ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
+          </button>
+          {saveMutation.isSuccess && <p className="text-xs text-success">تنظیمات با موفقیت ذخیره شد</p>}
+        </div>
       </div>
     </div>
   );
