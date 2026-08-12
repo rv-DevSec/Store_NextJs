@@ -50,6 +50,7 @@ const {
   getMasterPrices,
   updateMasterPrice,
   uploadMasterPriceXlsx,
+  bulkUpdatePrices,
 } = require('../controllers/adminController');
 
 const xlsxUpload = multer({
@@ -260,6 +261,11 @@ router.post('/master-prices/upload', (req, res, next) => {
     next();
   });
 }, uploadMasterPriceXlsx);
+
+router.post('/products/bulk-update-prices', [
+  body('percent').isNumeric().withMessage('درصد باید عدد معتبر باشد'),
+  validate,
+], bulkUpdatePrices);
 
 /* ─── Seller Orders ─── */
 

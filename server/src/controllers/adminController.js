@@ -882,6 +882,61 @@ exports.uploadMasterPriceXlsx = async (req, res, next) => {
   }
 };
 
+const slugifyPart = (str) => (str || '')
+  .toString()
+  .toLowerCase()
+  .replace(/[^a-z0-9آ-ی\s]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/-+/g, '-')
+  .replace(/^-|-$/g, '')
+  .substring(0, 40);
+
+exports.bulkUpdatePrices = async (req, res, next) => {
+  try {
+    const percent = Number(req.body.percent);
+    if (typeof req.body.percent === 'undefined' || !Number.isFinite(percent)) {
+      return next(new AppError('درصد باید یک عدد معتبر باشد', 400));
+    }
+    if (percent < -100 || percent > 1000) {
+      return next(new AppError('درصد باید بین ۱۰۰- و ۱۰۰۰ باشد', 400));
+    }
+
+    const products = await Product.find({ masterPrice: { $gt: 0 } }).select('_id masterPrice').lean();
+    const ops = [];
+    for (const p of products) {
+      const raw = p.masterPrice * (1 + percent / 100);
+      const price = Math.ceil(raw / 1000) * 1000;
+      ops.push({ updateOne: { filter: { _id: p._id }, update: { $set: { price } } } });
+    }
+    if (ops.length) {
+      await Product.bulkWrite(ops);
+    }
+
+    const missingSlug = await Product.find({
+      $or: [{ slug: { $exists: false } }, { slug: '' }, { slug: null }],
+    }).populate('category', 'name').select('name category').lean();
+
+    let slugFixed = 0;
+    for (const p of missingSlug) {
+      const catName = p.category && typeof p.category === 'object' ? p.category.name : '';
+      const base = [slugifyPart(catName), slugifyPart(p.name)].filter(Boolean).join('-')
+        || `product-${crypto.randomBytes(4).toString('hex')}`;
+      const slug = await resolveSlug(base, p._id);
+      await Product.updateOne({ _id: p._id }, { $set: { slug } });
+      slugFixed++;
+    }
+
+    res.json({
+      success: true,
+      updatedPrices: ops.length,
+      missingSlugsFixed: slugFixed,
+      message: `${ops.length} محصول بروزرسانی شد${slugFixed ? `، ${slugFixed} اسلاگ ایجاد شد` : ''}.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 /* ─── Admin Seller Orders ─── */
 
 exports.getSellerOrders = async (req, res, next) => {

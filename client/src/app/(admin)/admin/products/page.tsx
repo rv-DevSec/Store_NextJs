@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx } from '@/services/orderService';
+import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx, adminBulkUpdatePrices } from '@/services/orderService';
 import { getCategories, getCars } from '@/services/productService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
@@ -23,6 +23,10 @@ const AdminProducts = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadingXlsx, setUploadingXlsx] = useState(false);
   const [importResult, setImportResult] = useState('');
+  const [showBulkPrice, setShowBulkPrice] = useState(false);
+  const [bulkPercent, setBulkPercent] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState('');
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
   const [inlinePrice, setInlinePrice] = useState('');
   const [inlineMasterPrice, setInlineMasterPrice] = useState('');
@@ -116,6 +120,31 @@ const AdminProducts = () => {
 
   const addSpec = () => setForm((p) => ({ ...p, specs: [...p.specs, { key: '', value: '' }] }));
 
+  const handleBulkPrice = async () => {
+    const percent = Number(bulkPercent);
+    if (bulkPercent === '' || !Number.isFinite(percent)) {
+      setBulkMessage('');
+      setError('لطفاً یک درصد معتبر وارد کنید');
+      return;
+    }
+    if (!confirm('قیمت فروش همه محصولات بر اساس قیمت پایه و این درصد بروزرسانی شود؟')) return;
+    setBulkLoading(true);
+    setError('');
+    setBulkMessage('');
+    try {
+      const res = await adminBulkUpdatePrices(percent);
+      setBulkMessage(res.message || 'قیمت‌ها بروزرسانی شدند');
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      setShowBulkPrice(false);
+      setBulkPercent('');
+    } catch (err) {
+      const serverMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(serverMsg || (err as Error)?.message || 'خطا در بروزرسانی قیمت‌ها');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleXlsxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -199,6 +228,10 @@ const AdminProducts = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">محصولات</h1>
         <div className="flex items-center gap-2">
+          <button onClick={() => { setShowBulkPrice((v) => !v); setBulkMessage(''); }} disabled={bulkLoading}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
+            بروزرسانی قیمت‌ها
+          </button>
           <button onClick={() => document.getElementById('xlsx-upload-input')?.click()} disabled={uploadingXlsx}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
             {uploadingXlsx ? 'در حال آپلود...' : 'آپلود اکسل'}
@@ -210,6 +243,26 @@ const AdminProducts = () => {
           </button>
         </div>
       </div>
+
+      {showBulkPrice && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex items-end gap-4">
+          <div className="flex-1 max-w-sm">
+            <label className="block text-xs text-gray-500 mb-1">درصد تغییر قیمت فروش (مثبت = افزایش، منفی = کاهش)</label>
+            <input type="number" value={bulkPercent} onChange={(e) => setBulkPercent(e.target.value)} placeholder="مثلاً 25"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            <p className="text-[11px] text-gray-400 mt-1">قیمت = قیمت پایه × (۱ + درصد/۱۰۰)، به‌روی ۱۰۰۰ تومان رند می‌شود. اسلاگ‌های خالی نیز به‌صورت خودکار ساخته می‌شوند.</p>
+          </div>
+          <button onClick={handleBulkPrice} disabled={bulkLoading}
+            className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
+            {bulkLoading ? 'در حال بروزرسانی...' : 'اعمال تغییر'}
+          </button>
+        </div>
+      )}
+      {bulkMessage && (
+        <div className="bg-success/10 text-success border border-success/20 rounded-xl px-4 py-3 text-sm mb-4">
+          {bulkMessage}
+        </div>
+      )}
 
       {importResult && (
         <div className="bg-success/10 text-success border border-success/20 rounded-xl px-4 py-3 text-sm mb-4">

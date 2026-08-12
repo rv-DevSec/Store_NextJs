@@ -105,6 +105,11 @@ export const adminDuplicateProduct = async (id: string) => {
   return data;
 };
 
+export const adminBulkUpdatePrices = async (percent: number) => {
+  const { data } = await api.post('/admin/products/bulk-update-prices', { percent });
+  return data;
+};
+
 export const adminCreateCategory = async (category: Record<string, unknown>) => {
   const { data } = await api.post('/admin/categories', category);
   return data;
