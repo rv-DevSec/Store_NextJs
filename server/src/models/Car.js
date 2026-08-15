@@ -8,6 +8,7 @@ const carSchema = new mongoose.Schema(
     engineType: { type: String },
     image: { type: String },
     slug: { type: String, required: true },
+    order: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

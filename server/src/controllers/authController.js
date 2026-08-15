@@ -5,6 +5,8 @@ const User = require('../models/User');
 const config = require('../config');
 const LoginLog = require('../models/LoginLog');
 const { validateEmailDomain } = require('../middlewares/validateEmail');
+const { normalizePhone, isValidPhone } = require('../utils/validatePhone');
+const smsService = require('../services/smsService');
 const { AppError } = require('../middlewares/errorHandler');
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
@@ -41,9 +43,37 @@ const buildAuthResponse = (user, accessToken, refreshToken) => ({
     username: user.username,
     email: user.email,
     phone: user.phone,
+    phoneVerified: user.phoneVerified,
     role: user.role,
   },
 });
+
+/**
+ * Build the phone-verification fields for a given phone number.
+ *
+ * When SMS verification is enabled a random code is issued and handed to the
+ * SMS provider; the account is created in an unverified state and the code must
+ * be confirmed via `POST /auth/verify-phone`. Otherwise the phone is treated as
+ * verified so the account is immediately usable.
+ */
+const buildPhoneVerificationFields = async (phone) => {
+  if (config.smsVerificationEnabled) {
+    const code = String(crypto.randomInt(100000, 1000000));
+    await smsService.sendVerificationCode(phone, code);
+    return {
+      phoneVerified: false,
+      phoneVerifiedAt: null,
+      phoneVerificationCode: crypto.createHash('sha256').update(code).digest('hex'),
+      phoneVerificationCodeExpire: new Date(Date.now() + config.smsVerificationCodeTtlMinutes * 60 * 1000),
+    };
+  }
+  return {
+    phoneVerified: true,
+    phoneVerifiedAt: new Date(),
+    phoneVerificationCode: null,
+    phoneVerificationCodeExpire: null,
+  };
+};
 
 exports.register = async (req, res, next) => {
   try {
@@ -58,18 +88,34 @@ exports.register = async (req, res, next) => {
       return next(new AppError('نام کاربری الزامی است', 400));
     }
 
+    if (!phone) {
+      return next(new AppError('شماره موبایل الزامی است', 400));
+    }
+    if (!isValidPhone(phone)) {
+      return next(new AppError('شماره موبایل معتبر نیست', 400));
+    }
+    const normalizedPhone = normalizePhone(phone);
+
     if (email && !validateEmailDomain(email)) {
       return next(new AppError('ایمیل معتبر نیست', 400));
     }
 
     const existingUser = await User.findOne({
-      $or: [{ username }, { email }, ...(phone ? [{ phone }] : [])],
+      $or: [{ username }, ...(email ? [{ email }] : []), { phone: normalizedPhone }],
     });
     if (existingUser) {
       return next(new AppError('کاربری با این نام کاربری، ایمیل یا شماره موبایل قبلاً ثبت‌نام کرده است', 400));
     }
 
-    const user = await User.create({ name, username, email, phone, password });
+    const phoneVerification = await buildPhoneVerificationFields(normalizedPhone);
+    const user = await User.create({
+      name,
+      username,
+      email: email || undefined,
+      phone: normalizedPhone,
+      password,
+      ...phoneVerification,
+    });
     const accessToken = signAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
 
@@ -89,18 +135,27 @@ exports.registerSeller = async (req, res, next) => {
     if (password.length < 6) {
       return next(new AppError('رمز عبور باید حداقل ۶ کاراکتر باشد', 400));
     }
+    if (!phone) {
+      return next(new AppError('شماره موبایل الزامی است', 400));
+    }
+    if (!isValidPhone(phone)) {
+      return next(new AppError('شماره موبایل معتبر نیست', 400));
+    }
+    const normalizedPhone = normalizePhone(phone);
 
     const existing = await User.findOne({
-      $or: [{ username }, ...(phone ? [{ phone }] : [])],
+      $or: [{ username }, { phone: normalizedPhone }],
     });
     if (existing) {
       return next(new AppError('نام کاربری یا شماره موبایل قبلاً ثبت‌شده است', 400));
     }
 
+    const phoneVerification = await buildPhoneVerificationFields(normalizedPhone);
     const user = await User.create({
-      name, username, phone, password,
+      name, username, phone: normalizedPhone, password,
       role: 'seller',
       isActive: false,
+      ...phoneVerification,
     });
 
     res.status(201).json({
@@ -161,6 +216,113 @@ exports.getMe = async (req, res, next) => {
       return next(new AppError('کاربر یافت نشد', 404));
     }
     res.json({ success: true, user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { name, username, email, phone, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+      return next(new AppError('کاربر یافت نشد', 404));
+    }
+
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed) return next(new AppError('نام نمی‌تواند خالی باشد', 400));
+      user.name = trimmed;
+    }
+
+    if (username !== undefined) {
+      const uname = String(username).trim();
+      if (!uname) return next(new AppError('نام کاربری نمی‌تواند خالی باشد', 400));
+      if (uname !== user.username) {
+        const dup = await User.findOne({ username: uname, _id: { $ne: user._id } }).lean();
+        if (dup) return next(new AppError('این نام کاربری قبلاً استفاده شده است', 400));
+        user.username = uname;
+      }
+    }
+
+    if (email !== undefined) {
+      const em = email ? String(email).trim().toLowerCase() : '';
+      if (em) {
+        if (!validateEmailDomain(em)) return next(new AppError('ایمیل معتبر نیست', 400));
+        const dup = await User.findOne({ email: em, _id: { $ne: user._id } }).lean();
+        if (dup) return next(new AppError('این ایمیل قبلاً ثبت شده است', 400));
+      }
+      user.email = em || undefined;
+    }
+
+    if (phone !== undefined) {
+      const ph = String(phone).trim();
+      if (ph && !isValidPhone(ph)) return next(new AppError('شماره موبایل معتبر نیست', 400));
+      const normalized = ph ? normalizePhone(ph) : '';
+      if (normalized && normalized !== user.phone) {
+        const dup = await User.findOne({ phone: normalized, _id: { $ne: user._id } }).lean();
+        if (dup) return next(new AppError('این شماره موبایل قبلاً ثبت شده است', 400));
+        user.phone = normalized;
+        // Phone changed → phone must be verified again
+        const verification = await buildPhoneVerificationFields(normalized);
+        Object.assign(user, verification);
+      } else if (!normalized && user.phone) {
+        user.phone = undefined;
+        user.phoneVerified = false;
+        user.phoneVerifiedAt = null;
+        user.phoneVerificationCode = null;
+        user.phoneVerificationCodeExpire = null;
+      }
+    }
+
+    if (newPassword) {
+      if (!currentPassword) return next(new AppError('رمز عبور فعلی الزامی است', 400));
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) return next(new AppError('رمز عبور فعلی اشتباه است', 400));
+      if (newPassword.length < 8 || !/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+        return next(new AppError('رمز عبور جدید باید حداقل ۸ کاراکتر با یک حرف انگلیسی و یک عدد باشد', 400));
+      }
+      user.password = newPassword;
+    }
+
+    await user.save();
+    const updated = await User.findById(user._id);
+    res.json({ success: true, user: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.verifyPhone = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    if (!code) return next(new AppError('کد تأیید را وارد کنید', 400));
+
+    const user = await User.findById(req.user._id).select('+phoneVerificationCode +phoneVerificationCodeExpire');
+    if (!user) return next(new AppError('کاربر یافت نشد', 404));
+
+    if (!user.phoneVerificationCode || !user.phoneVerificationCodeExpire) {
+      return next(new AppError('کد تأیید برای این شماره صادر نشده است', 400));
+    }
+    if (user.phoneVerificationCodeExpire < new Date()) {
+      return next(new AppError('کد تأیید منقضی شده است. لطفاً دوباره درخواست دهید.', 400));
+    }
+
+    const hashed = crypto.createHash('sha256').update(String(code)).digest('hex');
+    const expected = Buffer.from(user.phoneVerificationCode, 'hex');
+    const actual = Buffer.from(hashed, 'hex');
+    if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+      return next(new AppError('کد تأیید اشتباه است', 400));
+    }
+
+    user.phoneVerified = true;
+    user.phoneVerifiedAt = new Date();
+    user.phoneVerificationCode = null;
+    user.phoneVerificationCodeExpire = null;
+    await user.save();
+
+    const updated = await User.findById(user._id);
+    res.json({ success: true, message: 'شماره موبایل تأیید شد', user: updated });
   } catch (err) {
     next(err);
   }

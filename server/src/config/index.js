@@ -19,4 +19,6 @@ module.exports = {
   zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || '',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   nodeEnv,
+  smsVerificationEnabled: process.env.SMS_VERIFICATION_ENABLED === 'true',
+  smsVerificationCodeTtlMinutes: parseInt(process.env.SMS_VERIFICATION_CODE_TTL_MINUTES, 10) || 5,
 };

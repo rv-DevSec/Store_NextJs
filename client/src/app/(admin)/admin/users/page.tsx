@@ -38,17 +38,21 @@ const AdminUsers = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-right px-4 py-3 font-medium">نام</th>
+                <th className="text-right px-4 py-3 font-medium">نام کاربری</th>
                 <th className="text-right px-4 py-3 font-medium">ایمیل</th>
+                <th className="text-right px-4 py-3 font-medium">موبایل</th>
                 <th className="text-right px-4 py-3 font-medium">نقش</th>
                 <th className="text-right px-4 py-3 font-medium">تاریخ عضویت</th>
                 <th className="text-left px-4 py-3 font-medium">عملیات</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((user: { _id: string; name: string; email: string; role: string; createdAt: string }) => (
+              {users.map((user: { _id: string; name: string; username?: string; email: string; phone?: string; role: string; createdAt: string }) => (
                 <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                   <td className="px-4 py-3 font-medium">{user.name}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{user.username || '—'}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{user.email}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{user.phone || '—'}</td>
                   <td className="px-4 py-3">
                     {editingId === user._id ? (
                       <select value={editRole} onChange={(e) => setEditRole(e.target.value)}
@@ -84,7 +88,7 @@ const AdminUsers = () => {
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-gray-500">کاربری وجود ندارد</td></tr>}
+              {users.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-gray-500">کاربری وجود ندارد</td></tr>}
             </tbody>
           </table>
         </div>

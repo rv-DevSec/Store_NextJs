@@ -2,6 +2,7 @@ export interface IUser {
   _id: string;
   name: string;
   phone?: string;
+  phoneVerified?: boolean;
   email?: string;
   role: 'user' | 'seller' | 'admin';
   username?: string;

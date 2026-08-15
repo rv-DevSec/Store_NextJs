@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ['user', 'seller', 'admin'], default: 'user' },
     username: { type: String, unique: true, sparse: true, trim: true },
+    phoneVerified: { type: Boolean, default: false },
+    phoneVerifiedAt: { type: Date },
+    phoneVerificationCode: { type: String, select: false },
+    phoneVerificationCodeExpire: { type: Date, select: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     addresses: [addressSchema],
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
@@ -49,6 +53,8 @@ userSchema.methods.toJSON = function () {
   delete obj.refreshTokens;
   delete obj.resetPasswordToken;
   delete obj.resetPasswordExpire;
+  delete obj.phoneVerificationCode;
+  delete obj.phoneVerificationCodeExpire;
   return obj;
 };
 

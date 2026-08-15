@@ -100,6 +100,16 @@ export const adminDeleteProduct = async (id: string) => {
   return data;
 };
 
+export const adminDeleteProductImage = async (id: string, url: string) => {
+  const { data } = await api.delete(`/admin/products/${id}/image`, { data: { url } });
+  return data;
+};
+
+export const adminDeleteUpload = async (url: string) => {
+  const { data } = await api.post('/admin/delete-upload', { url });
+  return data;
+};
+
 export const adminDuplicateProduct = async (id: string) => {
   const { data } = await api.post(`/admin/products/${id}/duplicate`);
   return data;
@@ -137,6 +147,11 @@ export const adminUpdateCar = async (id: string, car: Record<string, unknown>) =
 
 export const adminDeleteCar = async (id: string) => {
   const { data } = await api.delete(`/admin/cars/${id}`);
+  return data;
+};
+
+export const adminReorderCars = async (ids: string[]) => {
+  const { data } = await api.post('/admin/cars/reorder', { cars: ids });
   return data;
 };
 

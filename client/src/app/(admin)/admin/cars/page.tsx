@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminCreateCar, adminUpdateCar, adminDeleteCar } from '@/services/orderService';
+import { adminCreateCar, adminUpdateCar, adminDeleteCar, adminReorderCars } from '@/services/orderService';
 import { getCars } from '@/services/productService';
 import api from '@/lib/api';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
@@ -13,7 +13,54 @@ const AdminCars = () => {
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const cars = data?.cars || [];
+  const apiOrder = cars.map((c: { _id: string }) => c._id);
+
+  const localIdSetKey = [...orderIds].sort().join(',');
+  const apiIdSetKey = [...apiOrder].sort().join(',');
+  if (apiOrder.length > 0 && localIdSetKey !== apiIdSetKey) {
+    setOrderIds(apiOrder);
+  }
+
+  const carsById = new Map<string, { _id: string; brand: string; model: string; image?: string }>(
+    cars.map((c: { _id: string; brand: string; model: string; image?: string }) => [c._id, c])
+  );
+  const orderedCars = orderIds
+    .map((id) => carsById.get(id))
+    .filter((c): c is { _id: string; brand: string; model: string; image?: string } => Boolean(c));
+  const orderChanged = orderIds.length > 0 && orderIds.join(',') !== apiOrder.join(',');
+
+  const moveCar = (index: number, dir: -1 | 1) => {
+    setOrderIds((prev) => {
+      const next = [...prev];
+      const target = index + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const handleSaveOrder = async () => {
+    if (!orderChanged || orderIds.length === 0) return;
+    setSavingOrder(true);
+    setError('');
+    setOrderMessage('');
+    try {
+      await adminReorderCars(orderIds);
+      setOrderMessage('ترتیب خودروها ذخیره شد');
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطا در ذخیره ترتیب';
+      setError(msg);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: adminCreateCar,
@@ -31,8 +78,6 @@ const AdminCars = () => {
     mutationFn: adminDeleteCar,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cars'] }),
   });
-
-  const cars = data?.cars || [];
 
   const handleSubmit = () => {
     setError('');
@@ -105,9 +150,27 @@ const AdminCars = () => {
         )}
       </div>
 
+      {orderChanged && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-gray-700">ترتیب نمایش تغییر کرده است</p>
+          <button onClick={handleSaveOrder} disabled={savingOrder}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
+            {savingOrder ? 'در حال ذخیره...' : 'ذخیره ترتیب'}
+          </button>
+        </div>
+      )}
+      {orderMessage && <p className="text-xs text-success mb-2">{orderMessage}</p>}
+
       <div className="bg-white rounded-xl border border-gray-200">
-        {cars.map((car: { _id: string; brand: string; model: string; image?: string }) => (
+        {orderedCars.map((car: { _id: string; brand: string; model: string; image?: string }, index: number) => (
           <div key={car._id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition gap-3">
+            <div className="flex flex-col items-center gap-1 flex-shrink-0" title="ترتیب نمایش">
+              <button onClick={() => moveCar(index, -1)} disabled={index === 0}
+                className="w-7 h-7 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600 flex items-center justify-center">▲</button>
+              <span className="text-[11px] text-gray-400">{index + 1}</span>
+              <button onClick={() => moveCar(index, 1)} disabled={index === orderedCars.length - 1}
+                className="w-7 h-7 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600 flex items-center justify-center">▼</button>
+            </div>
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
                 {car.image ? (
@@ -142,7 +205,7 @@ const AdminCars = () => {
             </div>
           </div>
         ))}
-        {cars.length === 0 && <p className="text-center py-8 text-gray-500 text-sm">خودرویی وجود ندارد</p>}
+        {orderedCars.length === 0 && <p className="text-center py-8 text-gray-500 text-sm">خودرویی وجود ندارد</p>}
       </div>
     </div>
   );

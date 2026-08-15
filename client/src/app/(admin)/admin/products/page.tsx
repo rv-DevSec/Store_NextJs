@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx, adminBulkUpdatePrices } from '@/services/orderService';
+import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx, adminBulkUpdatePrices, adminDeleteProductImage, adminDeleteUpload } from '@/services/orderService';
 import { getCategories, getCars } from '@/services/productService';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import { toAbsoluteUploadUrl } from '@/lib/utils/uploadUrl';
@@ -31,6 +31,7 @@ const AdminProducts = () => {
   const [inlinePrice, setInlinePrice] = useState('');
   const [inlineMasterPrice, setInlineMasterPrice] = useState('');
   const [inlineStock, setInlineStock] = useState('');
+  const [removingImage, setRemovingImage] = useState<string | null>(null);
 
   const { data } = useQuery({ queryKey: ['admin-products'], queryFn: getAdminProducts });
   const { data: categoriesData } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
@@ -84,6 +85,7 @@ const AdminProducts = () => {
     const rawSpecs = product.specs as Record<string, string> | undefined;
     const specList = rawSpecs ? Object.entries(rawSpecs).map(([key, value]) => ({ key, value })) : [];
     setEditingId(product._id as string);
+    setShowForm(false);
     setForm({
       name: product.name as string || '',
       slug: product.slug as string || '',
@@ -99,7 +101,7 @@ const AdminProducts = () => {
       featured: !!product.featured,
       orderable: product.orderable === true,
     });
-    setShowForm(true);
+    setInlineEditId(null);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,12 +178,36 @@ const AdminProducts = () => {
     setForm((p) => ({ ...p, specs: p.specs.filter((_, i) => i !== idx) }));
   };
 
-  const removeImage = (url: string) => {
+  const removeImage = async (url: string) => {
+    if (!editingId) return;
+    setRemovingImage(url);
+    setError('');
     setForm((p) => ({ ...p, images: p.images.filter((img) => img !== url) }));
+    try {
+      await adminDeleteProductImage(editingId, url);
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'خطا در حذف تصویر';
+      setError(msg);
+      setForm((p) => (p.images.includes(url) ? p : { ...p, images: [...p.images, url] }));
+    } finally {
+      setRemovingImage(null);
+    }
   };
 
-  const removeNewImage = (url: string) => {
+  const removeNewImage = async (url: string) => {
+    setRemovingImage(url);
+    setError('');
     setForm((p) => ({ ...p, newImages: p.newImages.filter((img) => img !== url) }));
+    try {
+      await adminDeleteUpload(url);
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'خطا در حذف تصویر';
+      setError(msg);
+      setForm((p) => (p.newImages.includes(url) ? p : { ...p, newImages: [...p.newImages, url] }));
+    } finally {
+      setRemovingImage(null);
+    }
   };
 
   const toggleCar = (carId: string) => {
@@ -214,14 +240,138 @@ const AdminProducts = () => {
     if (form.compatibleCars.length > 0) productData.compatibleCars = form.compatibleCars;
     productData.featured = form.featured;
     productData.orderable = form.orderable;
-    const allImages = [...form.images, ...form.newImages];
-    if (allImages.length > 0) productData.images = allImages;
+    productData.images = [...form.images, ...form.newImages];
     if (editingId) {
       updateMutation.mutate({ id: editingId, product: productData });
     } else {
       createMutation.mutate(productData);
     }
   };
+
+  const renderFormFields = () => (
+    <>
+      {error && <p className="text-xs text-danger">{error}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">نام محصول *</label>
+          <input type="text" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">اسلاگ *</label>
+          <input type="text" value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">قیمت *</label>
+          <input type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">قیمت تخفیف</label>
+          <input type="number" value={form.discountPrice} onChange={(e) => setForm((p) => ({ ...p, discountPrice: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">موجودی *</label>
+          <input type="number" value={form.stock} onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">دسته‌بندی *</label>
+          <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
+            <option value="">انتخاب کنید</option>
+            {categories.map((c: { _id: string; name: string }) => (
+              <option key={c._id} value={c._id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-gray-500 mb-1">توضیحات</label>
+        <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary resize-none" />
+      </div>
+
+      <div>
+        <label className="block text-xs text-gray-500 mb-2">مشخصات</label>
+        <div className="space-y-2">
+          {form.specs.map((spec, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input type="text" placeholder="عنوان" value={spec.key}
+                onChange={(e) => updateSpec(idx, 'key', e.target.value)}
+                className="w-1/3 min-w-[100px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              <input type="text" placeholder="مقدار" value={spec.value}
+                onChange={(e) => updateSpec(idx, 'value', e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              <button onClick={() => removeSpec(idx)} className="text-danger text-sm hover:underline flex-shrink-0">حذف</button>
+            </div>
+          ))}
+          <button onClick={addSpec} className="text-sm text-primary hover:underline">+ افزودن مشخصه</button>
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" checked={form.featured} onChange={(e) => setForm((p) => ({ ...p, featured: e.target.checked }))}
+          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+        <span className="text-sm text-gray-700">محصول ویژه</span>
+      </label>
+
+      <label className="flex items-center gap-2 cursor-pointer" title="در حالت «مخفی کردن قیمت‌ها»، این محصول همچنان قابل سفارش آنلاین خواهد بود">
+        <input type="checkbox" checked={form.orderable} onChange={(e) => setForm((p) => ({ ...p, orderable: e.target.checked }))}
+          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
+        <span className="text-sm text-gray-700">قابل سفارش آنلاین (در حالت مخفی کردن قیمت‌ها)</span>
+      </label>
+
+      <div>
+        <label className="block text-xs text-gray-500 mb-2">تصاویر</label>
+        <div className="flex flex-wrap gap-3 mb-3">
+          {form.images.map((url) => (
+            <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+              <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
+              <button onClick={() => removeImage(url)} disabled={removingImage === url}
+                className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center disabled:opacity-50">×</button>
+            </div>
+          ))}
+          {form.newImages.map((url) => (
+            <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+              <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
+              <button onClick={() => removeNewImage(url)} disabled={removingImage === url}
+                className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center disabled:opacity-50">×</button>
+            </div>
+          ))}
+        </div>
+        <label className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-50 transition">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {uploading ? 'در حال آپلود...' : 'انتخاب تصاویر'}
+          <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
+        </label>
+      </div>
+
+      <div>
+        <label className="block text-xs text-gray-500 mb-2">خودروهای سازگار</label>
+        <div className="flex flex-wrap gap-2">
+          {cars.map((c: { _id: string; brand: string; model: string }) => (
+            <button key={c._id} onClick={() => toggleCar(c._id)}
+              className={`px-3 py-1.5 rounded-lg text-sm border transition ${form.compatibleCars.includes(c._id) ? 'bg-primary text-white border-primary' : 'border-gray-300 hover:border-gray-400'}`}>
+              {c.brand} {c.model}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending || uploading}
+          className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
+          {editingId ? 'ویرایش' : 'ایجاد'}
+        </button>
+        <button onClick={resetForm} className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition">انصراف</button>
+      </div>
+    </>
+  );
 
   return (
     <div>
@@ -275,127 +425,8 @@ const AdminProducts = () => {
 
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 space-y-4">
-          <h2 className="font-bold">{editingId ? 'ویرایش محصول' : 'محصول جدید'}</h2>
-          {error && <p className="text-xs text-danger">{error}</p>}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">نام محصول *</label>
-              <input type="text" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">اسلاگ *</label>
-              <input type="text" value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">قیمت *</label>
-              <input type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">قیمت تخفیف</label>
-              <input type="number" value={form.discountPrice} onChange={(e) => setForm((p) => ({ ...p, discountPrice: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">موجودی *</label>
-              <input type="number" value={form.stock} onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">دسته‌بندی *</label>
-              <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
-                <option value="">انتخاب کنید</option>
-                {categories.map((c: { _id: string; name: string }) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">توضیحات</label>
-            <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary resize-none" />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-2">مشخصات</label>
-            <div className="space-y-2">
-              {form.specs.map((spec, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <input type="text" placeholder="عنوان" value={spec.key}
-                    onChange={(e) => updateSpec(idx, 'key', e.target.value)}
-                    className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-                  <input type="text" placeholder="مقدار" value={spec.value}
-                    onChange={(e) => updateSpec(idx, 'value', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
-                  <button onClick={() => removeSpec(idx)} className="text-danger text-sm hover:underline">حذف</button>
-                </div>
-              ))}
-              <button onClick={addSpec} className="text-sm text-primary hover:underline">+ افزودن مشخصه</button>
-            </div>
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.featured} onChange={(e) => setForm((p) => ({ ...p, featured: e.target.checked }))}
-              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
-            <span className="text-sm text-gray-700">محصول ویژه</span>
-          </label>
-
-          <label className="flex items-center gap-2 cursor-pointer" title="در حالت «مخفی کردن قیمت‌ها»، این محصول همچنان قابل سفارش آنلاین خواهد بود">
-            <input type="checkbox" checked={form.orderable} onChange={(e) => setForm((p) => ({ ...p, orderable: e.target.checked }))}
-              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
-            <span className="text-sm text-gray-700">قابل سفارش آنلاین (در حالت مخفی کردن قیمت‌ها)</span>
-          </label>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-2">تصاویر</label>
-            <div className="flex flex-wrap gap-3 mb-3">
-              {form.images.map((url) => (
-                <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
-                  <button onClick={() => removeImage(url)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center">×</button>
-                </div>
-              ))}
-              {form.newImages.map((url) => (
-                <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={toAbsoluteUploadUrl(url)} alt="" className="w-full h-full object-cover" />
-                  <button onClick={() => removeNewImage(url)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 bg-danger text-white rounded-full text-xs flex items-center justify-center">×</button>
-                </div>
-              ))}
-            </div>
-            <label className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-50 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              {uploading ? 'در حال آپلود...' : 'انتخاب تصاویر'}
-              <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-2">خودروهای سازگار</label>
-            <div className="flex flex-wrap gap-2">
-              {cars.map((c: { _id: string; brand: string; model: string }) => (
-                <button key={c._id} onClick={() => toggleCar(c._id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm border transition ${form.compatibleCars.includes(c._id) ? 'bg-primary text-white border-primary' : 'border-gray-300 hover:border-gray-400'}`}>
-                  {c.brand} {c.model}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending || uploading}
-              className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
-              {editingId ? 'ویرایش' : 'ایجاد'}
-            </button>
-            <button onClick={resetForm} className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition">انصراف</button>
-          </div>
+          <h2 className="font-bold">محصول جدید</h2>
+          {renderFormFields()}
         </div>
       )}
 
@@ -414,7 +445,8 @@ const AdminProducts = () => {
             </thead>
             <tbody>
               {filtered.map((product: { _id: string; name: string; price: number; discountPrice?: number; masterPrice?: number; stock: number; category?: { name: string }; images?: string[]; orderable?: boolean }) => (
-                <tr key={product._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                <Fragment key={product._id}>
+                <tr className="border-b border-gray-100 hover:bg-gray-50 transition">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -478,7 +510,7 @@ const AdminProducts = () => {
                       </div>
                     ) : (
                       <div className="flex gap-2 justify-end">
-                        <button onClick={() => { setInlineEditId(product._id); setInlinePrice(String(product.price ?? '')); setInlineMasterPrice(String(product.masterPrice ?? '')); setInlineStock(String(product.stock)); }}
+                        <button onClick={() => { setInlineEditId(product._id); setEditingId(null); setInlinePrice(String(product.price ?? '')); setInlineMasterPrice(String(product.masterPrice ?? '')); setInlineStock(String(product.stock)); }}
                           className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition">ویرایش قیمت</button>
                         <button onClick={() => handleEdit(product)} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">ویرایش کامل</button>
                         <button onClick={() => { if (confirm('حذف شود؟')) deleteMutation.mutate(product._id); }} className="text-xs px-2 py-1 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition">حذف</button>
@@ -487,6 +519,20 @@ const AdminProducts = () => {
                     )}
                   </td>
                 </tr>
+                {editingId === product._id && (
+                  <tr className="bg-gray-50/60 border-b border-gray-200">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h2 className="font-bold">ویرایش محصول</h2>
+                          <button onClick={resetForm} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">بستن</button>
+                        </div>
+                        {renderFormFields()}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-8 text-gray-500">محصولی یافت نشد</td></tr>

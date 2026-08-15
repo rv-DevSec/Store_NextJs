@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const { AppError } = require('../middlewares/errorHandler');
 const { Parser } = require('json2csv');
 const escapeRegex = require('../utils/escapeRegex');
+const { normalizePhone, isValidPhone } = require('../utils/validatePhone');
 
 const PRODUCT_ALLOWED = ['name', 'slug', 'description', 'price', 'discountPrice', 'masterPrice', 'stock', 'brand', 'images', 'specs', 'compatibleCars', 'category', 'featured', 'isActive', 'orderable'];
 const pickProduct = (body) => { const o = {}; for (const k of PRODUCT_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
@@ -30,10 +31,19 @@ const resolveSlug = async (slug, excludeId) => {
   return newSlug;
 };
 
+const uploadDir = path.resolve(__dirname, '../..', 'uploads');
+
+const deleteUploadFile = (url) => {
+  if (typeof url !== 'string' || !url.startsWith('/uploads/')) return;
+  const filename = url.substring('/uploads/'.length);
+  if (!filename || filename.includes('/') || filename.includes('\\') || filename.includes('..')) return;
+  fs.unlink(path.join(uploadDir, filename), () => {});
+};
+
 const CATEGORY_ALLOWED = ['name', 'slug', 'description', 'icon', 'order'];
 const pickCategory = (body) => { const o = {}; for (const k of CATEGORY_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
 
-const CAR_ALLOWED = ['brand', 'model', 'year', 'image'];
+const CAR_ALLOWED = ['brand', 'model', 'year', 'image', 'order'];
 const pickCar = (body) => { const o = {}; for (const k of CAR_ALLOWED) if (body[k] !== undefined) o[k] = body[k]; return o; };
 
 const COUPON_ALLOWED = ['code', 'type', 'value', 'minPurchase', 'maxDiscount', 'usageLimit', 'expiresAt', 'isActive'];
@@ -368,6 +378,9 @@ exports.createProduct = async (req, res, next) => {
 
 exports.updateProduct = async (req, res, next) => {
   try {
+    const existing = await Product.findById(req.params.id).lean();
+    if (!existing) return next(new AppError('محصول یافت نشد', 404));
+
     const data = pickProduct(req.body);
     if (req.files && req.files.length > 0) {
       data.images = req.files.map((f) => `/uploads/${f.filename}`);
@@ -376,8 +389,14 @@ exports.updateProduct = async (req, res, next) => {
     if (data.discountPrice) data.discountPrice = Number(data.discountPrice);
     if (data.stock) data.stock = Number(data.stock);
     if (data.slug) data.slug = await resolveSlug(data.slug, req.params.id);
+
+    if (data.images !== undefined) {
+      const oldImages = Array.isArray(existing.images) ? existing.images : [];
+      const removed = oldImages.filter((url) => !data.images.includes(url));
+      removed.forEach(deleteUploadFile);
+    }
+
     const product = await Product.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
-    if (!product) return next(new AppError('محصول یافت نشد', 404));
     res.json({ success: true, product });
   } catch (err) {
     next(err);
@@ -386,9 +405,43 @@ exports.updateProduct = async (req, res, next) => {
 
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
     if (!product) return next(new AppError('محصول یافت نشد', 404));
+    (Array.isArray(product.images) ? product.images : []).forEach(deleteUploadFile);
+    await Product.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'محصول حذف شد' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteProductImage = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) return next(new AppError('آدرس تصویر الزامی است', 400));
+
+    const product = await Product.findById(req.params.id);
+    if (!product) return next(new AppError('محصول یافت نشد', 404));
+    if (!Array.isArray(product.images) || !product.images.includes(url)) {
+      return next(new AppError('این تصویر در محصول یافت نشد', 404));
+    }
+
+    product.images = product.images.filter((u) => u !== url);
+    await product.save();
+    deleteUploadFile(url);
+
+    res.json({ success: true, product });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteUpload = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) return next(new AppError('آدرس تصویر الزامی است', 400));
+    deleteUploadFile(url);
+    res.json({ success: true, message: 'تصویر حذف شد' });
   } catch (err) {
     next(err);
   }
@@ -469,17 +522,23 @@ exports.createCar = async (req, res, next) => {
 
 exports.updateCar = async (req, res, next) => {
   try {
+    const existing = await Car.findById(req.params.id).lean();
+    if (!existing) return next(new AppError('خودرو یافت نشد', 404));
+
     const data = pickCar(req.body);
     if (req.file) {
       data.image = `/uploads/${req.file.filename}`;
     }
+    if (data.image !== undefined && existing.image && data.image !== existing.image) {
+      deleteUploadFile(existing.image);
+    }
+    if (data.order !== undefined) data.order = Number(data.order);
     if (!data.slug && data.model) {
       data.slug = data.brand
         ? `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase()
         : data.model.replace(/\s+/g, '-').toLowerCase();
     }
     const car = await Car.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
-    if (!car) return next(new AppError('خودرو یافت نشد', 404));
     res.json({ success: true, car });
   } catch (err) {
     next(err);
@@ -488,8 +547,27 @@ exports.updateCar = async (req, res, next) => {
 
 exports.deleteCar = async (req, res, next) => {
   try {
+    const car = await Car.findById(req.params.id);
+    if (!car) return next(new AppError('خودرو یافت نشد', 404));
+    if (car.image) deleteUploadFile(car.image);
     await Car.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'خودرو حذف شد' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.reorderCars = async (req, res, next) => {
+  try {
+    const { cars } = req.body;
+    if (!Array.isArray(cars) || cars.length === 0) {
+      return next(new AppError('لیست ترتیب خودروها الزامی است', 400));
+    }
+    const ops = cars.map((id, idx) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { order: idx + 1 } } },
+    }));
+    await Car.bulkWrite(ops);
+    res.json({ success: true, message: 'ترتیب خودروها ذخیره شد' });
   } catch (err) {
     next(err);
   }
@@ -680,14 +758,26 @@ exports.createSeller = async (req, res, next) => {
       return next(new AppError('نام کاربری تکراری است', 400));
     }
 
+    if (phone) {
+      if (!isValidPhone(phone)) {
+        return next(new AppError('شماره موبایل معتبر نیست', 400));
+      }
+      const dupPhone = await User.findOne({ phone: normalizePhone(phone) }).lean();
+      if (dupPhone) {
+        return next(new AppError('این شماره موبایل قبلاً ثبت شده است', 400));
+      }
+    }
+
     const seller = await User.create({
       name,
       username,
       password,
-      phone,
+      phone: phone ? normalizePhone(phone) : undefined,
       role: 'seller',
       markupPercent: Math.max(0, markupPercent || 0),
       createdBy: req.user._id,
+      phoneVerified: true,
+      phoneVerifiedAt: new Date(),
     });
 
     res.status(201).json({ success: true, seller });
@@ -700,7 +790,10 @@ exports.updateSeller = async (req, res, next) => {
   try {
     const updates = {};
     if (req.body.name) updates.name = req.body.name;
-    if (req.body.phone) updates.phone = req.body.phone;
+    if (req.body.phone) {
+      if (!isValidPhone(req.body.phone)) return next(new AppError('شماره موبایل معتبر نیست', 400));
+      updates.phone = normalizePhone(req.body.phone);
+    }
     if (req.body.username) {
       const dup = await User.findOne({ username: req.body.username, _id: { $ne: req.params.id } }).lean();
       if (dup) return next(new AppError('نام کاربری تکراری است', 400));

@@ -21,6 +21,8 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  deleteProductImage,
+  deleteUpload,
   duplicateProduct,
   createCategory,
   updateCategory,
@@ -28,6 +30,7 @@ const {
   createCar,
   updateCar,
   deleteCar,
+  reorderCars,
   getLoginLogs,
   clearLoginLogs,
   createCoupon,
@@ -149,6 +152,17 @@ router.delete('/products/:id', [
   validate,
 ], deleteProduct);
 
+router.delete('/products/:id/image', [
+  param('id').isMongoId().withMessage('شناسه محصول نامعتبر است'),
+  body('url').isString().notEmpty().withMessage('آدرس تصویر الزامی است'),
+  validate,
+], deleteProductImage);
+
+router.post('/delete-upload', [
+  body('url').isString().notEmpty().withMessage('آدرس تصویر الزامی است'),
+  validate,
+], deleteUpload);
+
 router.post('/categories', [
   body('name').notEmpty().withMessage('نام دسته‌بندی الزامی است'),
   body('slug').notEmpty().withMessage('slug الزامی است'),
@@ -174,6 +188,12 @@ router.post('/cars', [
   body('year').optional().isNumeric().withMessage('سال باید عدد باشد'),
   validate,
 ], createCar);
+
+router.post('/cars/reorder', [
+  body('cars').isArray({ min: 1 }).withMessage('لیست ترتیب خودروها الزامی است'),
+  body('cars.*').isMongoId().withMessage('شناسه خودرو نامعتبر است'),
+  validate,
+], reorderCars);
 
 router.put('/cars/:id', [
   upload('image'),

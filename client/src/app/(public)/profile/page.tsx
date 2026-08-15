@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAddresses, createAddress, updateAddress, deleteAddress } from '@/services/orderService';
-import { getProfile } from '@/services/userService';
+import { getProfile, updateProfile } from '@/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import SEO from '@/components/common/SEO';
 import type { IAddress } from '@/types';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: profileData } = useQuery({
@@ -17,6 +17,61 @@ const Profile = () => {
     queryFn: getProfile,
     enabled: !!user,
   });
+
+  const serverUser = profileData?.user || user;
+
+  const [infoForm, setInfoForm] = useState({ name: '', username: '', email: '', phone: '' });
+  const [infoSyncedKey, setInfoSyncedKey] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [infoSuccess, setInfoSuccess] = useState('');
+
+  const profileKey = serverUser ? `${serverUser.name}|${serverUser.username}|${serverUser.email}|${serverUser.phone}` : '';
+  if (profileKey && profileKey !== infoSyncedKey) {
+    setInfoForm({
+      name: serverUser.name || '',
+      username: serverUser.username || '',
+      email: serverUser.email || '',
+      phone: serverUser.phone || '',
+    });
+    setInfoSyncedKey(profileKey);
+  }
+
+  const handleSaveInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setInfoSuccess('');
+
+    const body: Record<string, string> = {};
+    if (infoForm.name !== (serverUser?.name || '')) body.name = infoForm.name;
+    if (infoForm.username !== (serverUser?.username || '')) body.username = infoForm.username;
+    if ((infoForm.email || '') !== (serverUser?.email || '')) body.email = infoForm.email;
+    if ((infoForm.phone || '') !== (serverUser?.phone || '')) body.phone = infoForm.phone;
+    if (newPassword) {
+      if (!currentPassword) { setError('برای تغییر رمز عبور، رمز فعلی را وارد کنید'); return; }
+      body.currentPassword = currentPassword;
+      body.newPassword = newPassword;
+    }
+
+    if (Object.keys(body).length === 0) { setInfoSuccess('هیچ تغییری داده نشده'); return; }
+
+    setSavingInfo(true);
+    try {
+      const res = await updateProfile(body);
+      setUser(res.user);
+      localStorage.setItem('user', JSON.stringify(res.user));
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      setInfoSuccess('اطلاعات با موفقیت به‌روزرسانی شد');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'خطا در ذخیره اطلاعات';
+      setError(msg);
+    } finally {
+      setSavingInfo(false);
+    }
+  };
 
   const { data: addressesData, isLoading: addressesLoading } = useQuery({
     queryKey: ['addresses'],
@@ -99,12 +154,61 @@ const Profile = () => {
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         <h2 className="font-bold mb-4">اطلاعات حساب</h2>
-        <div className="space-y-2 text-sm">
-          <p><span className="text-gray-500">نام:</span> {profileData?.user?.name || user?.name}</p>
-          <p><span className="text-gray-500">ایمیل:</span> {profileData?.user?.email || user?.email}</p>
-          <p><span className="text-gray-500">موبایل:</span> {profileData?.user?.phone || user?.phone || '—'}</p>
+        <div className="space-y-2 text-sm mb-4">
           <p><span className="text-gray-500">نقش:</span> {user?.role === 'admin' ? 'مدیر' : user?.role === 'seller' ? 'فروشنده' : 'کاربر'}</p>
         </div>
+        <form onSubmit={handleSaveInfo} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">نام</label>
+              <input type="text" value={infoForm.name} onChange={(e) => setInfoForm((p) => ({ ...p, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">نام کاربری</label>
+              <input type="text" value={infoForm.username} onChange={(e) => setInfoForm((p) => ({ ...p, username: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">ایمیل</label>
+              <input type="email" value={infoForm.email} onChange={(e) => setInfoForm((p) => ({ ...p, email: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">موبایل
+                {serverUser.phoneVerified
+                  ? <span className="mr-2 text-success text-[10px]">✓ تأیید شده</span>
+                  : <span className="mr-2 text-danger text-[10px]">تأیید نشده</span>}
+              </label>
+              <input type="tel" value={infoForm.phone} onChange={(e) => setInfoForm((p) => ({ ...p, phone: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+
+          <hr className="border-gray-200" />
+          <p className="text-xs text-gray-400">برای تغییر رمز عبور، فیلدهای زیر را پر کنید</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">رمز عبور فعلی</label>
+              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">رمز عبور جدید</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="حداقل ۸ کاراکتر با حرف و عدد"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-danger">{error}</p>}
+          {infoSuccess && <p className="text-xs text-success">{infoSuccess}</p>}
+
+          <button type="submit" disabled={savingInfo}
+            className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
+            {savingInfo ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
+          </button>
+        </form>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6">

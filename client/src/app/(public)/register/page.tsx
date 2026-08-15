@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import SEO from '@/components/common/SEO';
+import { isValidPhone } from '@/lib/utils/validation';
 
 const Register = () => {
   const { register } = useAuth();
@@ -23,8 +24,16 @@ const Register = () => {
     setError('');
     setSuccess('');
 
-    if (form.password.length < 6) {
-      setError('رمز عبور باید حداقل ۶ کاراکتر باشد');
+    if (!form.phone.trim()) {
+      setError('شماره موبایل الزامی است');
+      return;
+    }
+    if (!isValidPhone(form.phone.trim())) {
+      setError('شماره موبایل معتبر نیست');
+      return;
+    }
+    if (form.password.length < 8 || !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)) {
+      setError('رمز عبور باید حداقل ۸ کاراکتر با یک حرف انگلیسی و یک عدد باشد');
       return;
     }
     setLoading(true);
@@ -71,24 +80,24 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ایمیل <span className="text-gray-400 font-normal">(اختیاری)</span></label>
               <input type="email" name="email" value={form.email} onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200"
-                placeholder="your@email.com" required />
+                placeholder="your@email.com" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
               <input type="tel" name="phone" value={form.phone} onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200"
-                placeholder="09123456789" />
+                placeholder="09123456789" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
               <input type="password" name="password" value={form.password} onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200"
-                placeholder="حداقل ۶ کاراکتر" required />
+                placeholder="حداقل ۸ کاراکتر با حرف انگلیسی و عدد" required />
             </div>
 
             <button type="submit" disabled={loading}

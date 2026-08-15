@@ -3,7 +3,7 @@ const Car = require('../models/Car');
 exports.getCars = async (req, res, next) => {
   try {
     const cars = await Car.find({ isActive: true })
-      .sort({ brand: 1, model: 1 })
+      .sort({ order: 1, brand: 1, model: 1 })
       .lean();
 
     const brands = [...new Set(cars.map((c) => c.brand))].map((brand) => ({

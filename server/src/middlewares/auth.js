@@ -14,7 +14,7 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     req.user = await User.findById(decoded.id).select('-password -refreshTokens -resetPasswordToken -resetPasswordExpire');
     if (!req.user) {
       return next(new AppError('کاربر یافت نشد', 401));
