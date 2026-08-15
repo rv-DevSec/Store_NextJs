@@ -176,7 +176,7 @@ const Profile = () => {
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">موبایل
-                {serverUser.phoneVerified
+                {serverUser?.phoneVerified
                   ? <span className="mr-2 text-success text-[10px]">✓ تأیید شده</span>
                   : <span className="mr-2 text-danger text-[10px]">تأیید نشده</span>}
               </label>
