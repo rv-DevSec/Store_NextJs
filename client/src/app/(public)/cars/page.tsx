@@ -11,12 +11,10 @@ import SEO from '@/components/common/SEO';
 const Cars = () => {
   const { data, isLoading } = useQuery({ queryKey: ['cars'], queryFn: getCars });
 
-  const allCars: { _id: string; brand: string; model: string; image?: string }[] = [];
-  if (data?.brands) {
-    for (const brand of data.brands) {
-      for (const m of brand.models) {
-        allCars.push({ _id: m._id, brand: brand.brand, model: m.model, image: m.image });
-      }
+  const allCars: { _id: string; brand?: string; model: string; image?: string }[] = [];
+  if (data?.cars) {
+    for (const car of data.cars) {
+      allCars.push({ _id: car._id, brand: car.brand, model: car.model, image: car.image });
     }
   }
 

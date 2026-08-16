@@ -513,6 +513,10 @@ exports.createCar = async (req, res, next) => {
         ? `${data.brand}-${data.model}`.replace(/\s+/g, '-').toLowerCase()
         : data.model.replace(/\s+/g, '-').toLowerCase();
     }
+    if (data.order === undefined) {
+      const maxOrder = await Car.findOne().sort({ order: -1 }).select('order').lean();
+      data.order = (maxOrder?.order || 0) + 1;
+    }
     const car = await Car.create(data);
     res.status(201).json({ success: true, car });
   } catch (err) {

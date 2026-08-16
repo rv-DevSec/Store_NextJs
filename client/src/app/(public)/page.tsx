@@ -73,12 +73,10 @@ const Home = () => {
   const settings = settingsData?.settings;
   const festival = settings?.festival;
   const featuredProducts = featuredData?.products || [];
-  const allCars: { _id: string; brand: string; model: string; image?: string }[] = [];
-  if (carsData?.brands) {
-    for (const brand of carsData.brands) {
-      for (const m of brand.models) {
-        allCars.push({ _id: m._id, brand: brand.brand, model: m.model, image: m.image });
-      }
+  const allCars: { _id: string; brand?: string; model: string; image?: string }[] = [];
+  if (carsData?.cars) {
+    for (const car of carsData.cars) {
+      allCars.push({ _id: car._id, brand: car.brand, model: car.model, image: car.image });
     }
   }
   const phones: { name?: string; tel?: string }[] = Array.isArray(settings?.phones) ? settings.phones : [];
