@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdminProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, uploadImages, uploadMasterPriceXlsx, adminBulkUpdatePrices, adminDeleteProductImage, adminDeleteUpload } from '@/services/orderService';
 import { getCategories, getCars } from '@/services/productService';
@@ -32,6 +32,7 @@ const AdminProducts = () => {
   const [inlineMasterPrice, setInlineMasterPrice] = useState('');
   const [inlineStock, setInlineStock] = useState('');
   const [removingImage, setRemovingImage] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data } = useQuery({ queryKey: ['admin-products'], queryFn: getAdminProducts });
   const { data: categoriesData } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
@@ -70,6 +71,9 @@ const AdminProducts = () => {
   const cars = carsData?.cars || [];
 
   const filtered = products.filter((p: { name: string }) => p.name.includes(searchTerm));
+
+  const filteredIds = useMemo(() => filtered.map((p: { _id: string }) => p._id), [filtered]);
+  const allVisibleSelected = filteredIds.length > 0 && filteredIds.every((id: string) => selectedIds.has(id));
 
   const resetForm = () => {
     setShowForm(false);
@@ -129,14 +133,18 @@ const AdminProducts = () => {
       setError('لطفاً یک درصد معتبر وارد کنید');
       return;
     }
-    if (!confirm('قیمت فروش همه محصولات بر اساس قیمت پایه و این درصد بروزرسانی شود؟')) return;
+    const idsArray = [...selectedIds];
+    const hasSelection = idsArray.length > 0;
+    const targetLabel = hasSelection ? `${toPersianNumber(idsArray.length)} محصول انتخاب شده` : 'همه محصولات';
+    if (!confirm(`قیمت فروش ${targetLabel} بر اساس قیمت پایه و این درصد بروزرسانی شود؟`)) return;
     setBulkLoading(true);
     setError('');
     setBulkMessage('');
     try {
-      const res = await adminBulkUpdatePrices(percent);
+      const res = await adminBulkUpdatePrices(percent, hasSelection ? idsArray : undefined);
       setBulkMessage(res.message || 'قیمت‌ها بروزرسانی شدند');
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      setSelectedIds(new Set());
       setShowBulkPrice(false);
       setBulkPercent('');
     } catch (err) {
@@ -145,6 +153,27 @@ const AdminProducts = () => {
     } finally {
       setBulkLoading(false);
     }
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filteredIds.forEach((id: string) => next.delete(id));
+      } else {
+        filteredIds.forEach((id: string) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const handleXlsxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -402,9 +431,12 @@ const AdminProducts = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
             <p className="text-[11px] text-gray-400 mt-1">قیمت = قیمت پایه × (۱ + درصد/۱۰۰)، به‌روی ۱۰۰۰ تومان رند می‌شود. اسلاگ‌های خالی نیز به‌صورت خودکار ساخته می‌شوند.</p>
           </div>
+          {selectedIds.size > 0 && (
+            <p className="text-xs text-primary font-medium whitespace-nowrap">{toPersianNumber(selectedIds.size)} محصول انتخاب شده</p>
+          )}
           <button onClick={handleBulkPrice} disabled={bulkLoading}
             className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50">
-            {bulkLoading ? 'در حال بروزرسانی...' : 'اعمال تغییر'}
+            {bulkLoading ? 'در حال بروزرسانی...' : selectedIds.size > 0 ? `اعمال روی ${toPersianNumber(selectedIds.size)} محصول` : 'اعمال روی همه'}
           </button>
         </div>
       )}
@@ -435,6 +467,10 @@ const AdminProducts = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 font-medium w-10">
+                  <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAll}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer" />
+                </th>
                 <th className="text-right px-4 py-3 font-medium">محصول</th>
                 <th className="text-right px-4 py-3 font-medium">قیمت فروش</th>
                 <th className="text-right px-4 py-3 font-medium">قیمت پایه فروشنده</th>
@@ -447,6 +483,10 @@ const AdminProducts = () => {
               {filtered.map((product: { _id: string; name: string; price: number; discountPrice?: number; masterPrice?: number; stock: number; category?: { name: string }; images?: string[]; orderable?: boolean }) => (
                 <Fragment key={product._id}>
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" checked={selectedIds.has(product._id)} onChange={() => toggleSelectOne(product._id)}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer" />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -521,7 +561,7 @@ const AdminProducts = () => {
                 </tr>
                 {editingId === product._id && (
                   <tr className="bg-gray-50/60 border-b border-gray-200">
-                    <td colSpan={6} className="px-4 py-4">
+                    <td colSpan={7} className="px-4 py-4">
                       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                         <div className="flex items-center justify-between">
                           <h2 className="font-bold">ویرایش محصول</h2>
@@ -535,7 +575,7 @@ const AdminProducts = () => {
                 </Fragment>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-500">محصولی یافت نشد</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-gray-500">محصولی یافت نشد</td></tr>
               )}
             </tbody>
           </table>

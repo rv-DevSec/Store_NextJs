@@ -18,6 +18,7 @@ router.use('/wishlist', require('./wishlist'));
 router.use('/addresses', require('./address'));
 router.use('/invoice', require('./invoice'));
 router.use('/admin', require('./admin'));
+router.use('/admin', require('./backup'));
 router.use('/seller', require('./seller'));
 router.use('/product-requests', require('./productRequests'));
 

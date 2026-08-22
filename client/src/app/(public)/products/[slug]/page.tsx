@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useProduct, useProducts } from '@/lib/hooks/useProducts';
+import { useProduct } from '@/lib/hooks/useProducts';
 import { useCart } from '@/providers/CartProvider';
 import { formatPrice, toPersianNumber } from '@/lib/utils/numbers';
 import SEO from '@/components/common/SEO';
 import { getFavorites } from '@/services/orderService';
+import { getRelatedProducts } from '@/services/productService';
 import { getProductReviews, createReview } from '@/services/reviewService';
 import FavoriteButton from '@/components/common/FavoriteButton';
 import ProductCard from '@/components/product/ProductCard';
@@ -106,14 +107,13 @@ const ProductDetail = () => {
   const { data: settingsData } = useSettings();
   const firstPhone = settingsData?.settings?.phones?.find((p: { tel: string }) => p.tel)?.tel;
 
-  const categoryId = product?.category?._id || '';
-  const { data: relatedData } = useProducts(
-    categoryId ? { category: categoryId, limit: '6' } : {}
-  );
+  const { data: relatedData } = useQuery({
+    queryKey: ['related-products', slug],
+    queryFn: () => getRelatedProducts(slug, 8),
+    enabled: !!slug,
+  });
 
-  const relatedProducts: IProduct[] = (relatedData?.products || []).filter(
-    (p: IProduct) => p._id !== product?._id
-  ).slice(0, 6);
+  const relatedProducts: IProduct[] = relatedData?.related || [];
 
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
     queryKey: ['product-reviews', product?._id],
@@ -213,6 +213,15 @@ const ProductDetail = () => {
         image={product.images?.[0]}
         jsonLd={[
           {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'خانه', item: `${SITE_URL}/` },
+              { '@type': 'ListItem', position: 2, name: 'محصولات', item: `${SITE_URL}/products` },
+              ...(product.category?.name ? [{ '@type': 'ListItem' as const, position: 3 as const, name: product.category.name, item: `${SITE_URL}/products?category=${product.category._id}` }] : []),
+              { '@type': 'ListItem', position: (product.category?.name ? 4 : 3), name: product.name },
+            ],
+          },
+          {
             '@type': 'Product',
             name: product.name,
             description: product.description,
@@ -230,19 +239,19 @@ const ProductDetail = () => {
           },
         ]}
       />
-      <nav className="text-sm text-gray-500 mb-6 animate-slide-down">
-        <button onClick={() => router.push('/')} className="hover:text-primary transition-colors duration-200">خانه</button>
+      <nav className="text-sm text-gray-500 mb-6 animate-slide-down" aria-label="breadcrumb">
+        <Link href="/" className="hover:text-primary transition-colors duration-200">خانه</Link>
         <span className="mx-2 text-gray-300">/</span>
-        <button onClick={() => router.push('/products')} className="hover:text-primary transition-colors duration-200">محصولات</button>
+        <Link href="/products" className="hover:text-primary transition-colors duration-200">محصولات</Link>
         {product.category?.name && (
           <>
             <span className="mx-2 text-gray-300">/</span>
-            <button
-              onClick={() => router.push(`/products?category=${product.category._id}`)}
+            <Link
+              href={`/products?category=${product.category._id}`}
               className="hover:text-primary transition-colors duration-200"
             >
               {product.category.name}
-            </button>
+            </Link>
           </>
         )}
         <span className="mx-2 text-gray-300">/</span>
@@ -304,7 +313,10 @@ const ProductDetail = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              برند: {product.brand}
+              برند:{' '}
+              <Link href={`/products?brand=${encodeURIComponent(product.brand)}`} className="text-primary hover:underline transition-colors duration-200">
+                {product.brand}
+              </Link>
             </p>
           )}
 
@@ -458,7 +470,7 @@ const ProductDetail = () => {
         <div className="mt-12 border-t border-gray-200 pt-8 animate-fade-in">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">محصولات مرتبط</h2>
-            <Link href={`/products?category=${categoryId}`} className="text-primary hover:underline text-sm">مشاهده همه</Link>
+            <Link href={`/products?category=${product.category?._id || ''}`} className="text-primary hover:underline text-sm">مشاهده همه</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {relatedProducts.map((rp, idx) => (

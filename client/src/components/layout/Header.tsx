@@ -53,6 +53,24 @@ const Header = () => {
             <span className="truncate min-w-0">{siteName || 'قطعات یدکی خودرو'}</span>
           </Link>
 
+          <nav className="hidden md:flex items-center gap-1 mx-4">
+            {[
+              { to: '/', label: 'خانه' },
+              { to: '/products', label: 'محصولات' },
+              { to: '/categories', label: 'دسته‌بندی‌ها' },
+              { to: '/cars', label: 'خودروها' },
+              { to: '/about', label: 'درباره ما' },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                href={item.to}
+                className="px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-all duration-200"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
             <div className="relative w-full">
               <input

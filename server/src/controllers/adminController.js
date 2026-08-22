@@ -998,7 +998,19 @@ exports.bulkUpdatePrices = async (req, res, next) => {
       return next(new AppError('درصد باید بین ۱۰۰- و ۱۰۰۰ باشد', 400));
     }
 
-    const products = await Product.find({ masterPrice: { $gt: 0 } }).select('_id masterPrice').lean();
+    const { productIds } = req.body;
+    const hasSelection = Array.isArray(productIds) && productIds.length > 0;
+
+    const filter = { masterPrice: { $gt: 0 } };
+    if (hasSelection) {
+      const validIds = productIds.filter((id) => /^[a-f0-9]{24}$/i.test(id));
+      if (validIds.length === 0) {
+        return next(new AppError('شناسه‌های محصول نامعتبر هستند', 400));
+      }
+      filter._id = { $in: validIds };
+    }
+
+    const products = await Product.find(filter).select('_id masterPrice').lean();
     const ops = [];
     for (const p of products) {
       const raw = p.masterPrice * (1 + percent / 100);
@@ -1027,7 +1039,7 @@ exports.bulkUpdatePrices = async (req, res, next) => {
       success: true,
       updatedPrices: ops.length,
       missingSlugsFixed: slugFixed,
-      message: `${ops.length} محصول بروزرسانی شد${slugFixed ? `، ${slugFixed} اسلاگ ایجاد شد` : ''}.`,
+      message: `${ops.length} محصول بروزرسانی شد${hasSelection ? ' (از میان انتخاب شده‌ها)' : ''}${slugFixed ? `، ${slugFixed} اسلاگ ایجاد شد` : ''}.`,
     });
   } catch (err) {
     next(err);

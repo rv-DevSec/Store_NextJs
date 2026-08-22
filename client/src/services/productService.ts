@@ -17,6 +17,11 @@ export const getProductBySlug = async (slug: string) => {
   return data;
 };
 
+export const getRelatedProducts = async (slug: string, limit = 8) => {
+  const { data } = await api.get(`/products/${slug}/related?limit=${limit}`);
+  return data;
+};
+
 export const getCategories = async () => {
   const { data } = await api.get('/categories');
   return data;

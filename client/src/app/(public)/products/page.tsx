@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProducts, useCategories, useCars } from '@/lib/hooks/useProducts';
 import { toPersianNumber } from '@/lib/utils/numbers';
@@ -23,6 +24,7 @@ const ProductsContent = () => {
   const search = searchParams.get('search') || '';
   const rawCategory = searchParams.get('category') || '';
   const car = searchParams.get('car') || '';
+  const brand = searchParams.get('brand') || '';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
   const sort = searchParams.get('sort') || 'newest';
@@ -44,7 +46,7 @@ const ProductsContent = () => {
   }, [rawCategory, categories]);
 
   const { data: productsData, isLoading } = useProducts({
-    search, category, car, minPrice, maxPrice, sort, page, limit: 12,
+    search, category, car, brand, minPrice, maxPrice, sort, page, limit: 12,
   });
 
   const products = productsData?.products || [];
@@ -69,8 +71,8 @@ const ProductsContent = () => {
       else { params.delete(key); }
     });
     if (updates.category !== undefined || updates.car !== undefined ||
-        updates.minPrice !== undefined || updates.maxPrice !== undefined ||
-        updates.search !== undefined) {
+        updates.brand !== undefined || updates.minPrice !== undefined ||
+        updates.maxPrice !== undefined || updates.search !== undefined) {
       params.delete('page');
     }
     router.push(`/products?${params.toString()}`);
@@ -96,7 +98,7 @@ const ProductsContent = () => {
     router.push('/products');
   };
 
-  const hasFilters = !!(search || category || car || minPrice || maxPrice);
+  const hasFilters = !!(search || category || car || brand || minPrice || maxPrice);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -139,6 +141,13 @@ const ProductsContent = () => {
                   <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs text-gray-500 mb-1">برند محصول</label>
+              <input type="text" value={brand} onChange={(e) => updateParams({ brand: e.target.value })}
+                placeholder="نام برند..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary" />
             </div>
 
             <div className="mb-4">
@@ -192,6 +201,12 @@ const ProductsContent = () => {
               {categories.filter((c) => c._id === category).map((c) => (
                 <span key={c._id} className="bg-primary/10 text-primary text-sm px-3 py-1 rounded-full">{c.name}</span>
               ))}
+              {brand && (
+                <span className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-full flex items-center gap-1">
+                  برند: {brand}
+                  <button onClick={() => updateParams({ brand: '' })} className="hover:text-blue-900 transition-colors">✕</button>
+                </span>
+              )}
             </div>
             <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
@@ -224,23 +239,25 @@ const ProductsContent = () => {
 
               {pagination.pages > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-8">
-                  <button onClick={() => updateParams({ page: String(Number(page) - 1) })}
-                    disabled={Number(page) <= 1}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">قبلی</button>
+                  {Number(page) > 1 && (
+                    <Link href={`/products?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(Number(page) - 1) }).toString()}`}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition">قبلی</Link>
+                  )}
                   {Array.from({ length: pagination.pages }, (_, i) => i + 1)
                     .filter((p) => Math.abs(p - Number(page)) <= 2 || p === 1 || p === pagination.pages)
                     .map((p, idx, arr) => (
                       <span key={p} className="flex items-center gap-1">
                         {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-gray-400">...</span>}
-                        <button onClick={() => updateParams({ page: String(p) })}
-                          className={`w-10 h-10 rounded-lg text-sm font-medium transition ${Number(page) === p ? 'bg-primary text-white' : 'border border-gray-300 hover:bg-gray-50'}`}>
+                        <Link href={`/products?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(p) }).toString()}`}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium transition flex items-center justify-center ${Number(page) === p ? 'bg-primary text-white' : 'border border-gray-300 hover:bg-gray-50'}`}>
                           {toPersianNumber(p)}
-                        </button>
+                        </Link>
                       </span>
                     ))}
-                  <button onClick={() => updateParams({ page: String(Number(page) + 1) })}
-                    disabled={Number(page) >= pagination.pages}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">بعدی</button>
+                  {Number(page) < pagination.pages && (
+                    <Link href={`/products?${new URLSearchParams({ ...Object.fromEntries(searchParams), page: String(Number(page) + 1) }).toString()}`}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition">بعدی</Link>
+                  )}
                 </div>
               )}
             </>

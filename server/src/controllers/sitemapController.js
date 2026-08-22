@@ -19,6 +19,8 @@ exports.generateSitemap = async (req, res, next) => {
     urls.push({ loc: baseUrl, priority: 1.0, changefreq: 'daily' });
     urls.push({ loc: `${baseUrl}/products`, priority: 0.9, changefreq: 'daily' });
     urls.push({ loc: `${baseUrl}/categories`, priority: 0.8, changefreq: 'weekly' });
+    urls.push({ loc: `${baseUrl}/cars`, priority: 0.8, changefreq: 'weekly' });
+    urls.push({ loc: `${baseUrl}/about`, priority: 0.5, changefreq: 'monthly' });
 
     products.forEach((p) => {
       urls.push({

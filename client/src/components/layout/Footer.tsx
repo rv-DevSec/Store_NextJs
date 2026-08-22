@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { getSettings } from '@/services/productService';
+import { getSettings, getCategories } from '@/services/productService';
 
 const Footer = () => {
   const { data } = useQuery({
@@ -10,10 +10,16 @@ const Footer = () => {
     queryFn: getSettings,
   });
 
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+
   const settings = data?.settings;
   const phones: { name?: string; tel?: string }[] = settings?.phones || [];
   const email: string = settings?.email || '';
   const address: string = settings?.address || '';
+  const categories: { _id: string; name: string }[] = categoriesData?.categories || [];
 
   return (
     <footer className="bg-dark text-white mt-auto">
@@ -39,11 +45,18 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-sm md:text-base mb-2 md:mb-3">دسته‌بندی‌ها</h4>
             <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-400">
-              <li><Link href="/products?category=engine" className="hover:text-white transition">موتور و پیشرانه</Link></li>
-              <li><Link href="/products?category=brake-clutch" className="hover:text-white transition">ترمز و کلاچ</Link></li>
-              <li><Link href="/products?category=suspension-steering" className="hover:text-white transition">تعلیق و فرمان</Link></li>
-              <li><Link href="/products?category=electrical" className="hover:text-white transition">برق و الکترونیک</Link></li>
-              <li><Link href="/products?category=accessories" className="hover:text-white transition">اکسسوری</Link></li>
+              {categories.length > 0 ? (
+                categories.slice(0, 6).map((cat) => (
+                  <li key={cat._id}>
+                    <Link href={`/products?category=${cat._id}`} className="hover:text-white transition">{cat.name}</Link>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li><Link href="/products" className="hover:text-white transition">همه محصولات</Link></li>
+                </>
+              )}
+              <li><Link href="/cars" className="hover:text-white transition">خودروها</Link></li>
             </ul>
           </div>
 

@@ -115,8 +115,8 @@ export const adminDuplicateProduct = async (id: string) => {
   return data;
 };
 
-export const adminBulkUpdatePrices = async (percent: number) => {
-  const { data } = await api.post('/admin/products/bulk-update-prices', { percent });
+export const adminBulkUpdatePrices = async (percent: number, productIds?: string[]) => {
+  const { data } = await api.post('/admin/products/bulk-update-prices', { percent, productIds });
   return data;
 };
 
@@ -321,3 +321,41 @@ const downloadFromApi = async (url: string, filename: string) => {
 
 export const downloadProductsCsv = () => downloadFromApi('/admin/products/export/csv', 'products.csv');
 export const downloadOrdersCsv = () => downloadFromApi('/admin/orders/export/csv', 'orders.csv');
+
+/* ─── Backup & Restore ─── */
+
+export const downloadBackup = async (collection: string) => {
+  const token = localStorage.getItem('token');
+  if (!token) { alert('لطفاً وارد حساب خود شوید'); return; }
+  try {
+    const url = collection === 'all' ? '/admin/backup/all' : `/admin/backup/${collection}`;
+    const { data } = await api.get(url, { responseType: 'blob' });
+    const ext = 'json';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = collection === 'all' ? `backup-all-${date}.${ext}` : `backup-${collection}-${date}.${ext}`;
+    const blob = new Blob([data], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(link.href);
+  } catch {
+    alert('خطا در دانلود پشتیبان');
+  }
+};
+
+export const previewBackupFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/admin/restore/preview', formData);
+  return data;
+};
+
+export const restoreBackup = async (collection: string, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post(`/admin/restore/${collection}`, formData);
+  return data;
+};

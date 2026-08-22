@@ -97,6 +97,49 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
+exports.getRelatedProducts = async (req, res, next) => {
+  try {
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit, 10) || 8));
+    const product = await Product.findOne({ slug: req.params.slug, isActive: true })
+      .select('_id category brand')
+      .lean();
+    if (!product) {
+      return next(new AppError('محصول مورد نظر یافت نشد', 404));
+    }
+
+    const related = await Product.find({
+      isActive: true,
+      category: product.category,
+      _id: { $ne: product._id },
+    })
+      .populate('category', 'name slug')
+      .populate('compatibleCars', 'brand model')
+      .sort({ numReviews: -1, createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    if (related.length < limit && product.brand) {
+      const existingIds = related.map((r) => r._id);
+      existingIds.push(product._id);
+      const extra = await Product.find({
+        isActive: true,
+        brand: product.brand,
+        _id: { $nin: existingIds },
+      })
+        .populate('category', 'name slug')
+        .populate('compatibleCars', 'brand model')
+        .sort({ numReviews: -1, createdAt: -1 })
+        .limit(limit - related.length)
+        .lean();
+      related.push(...extra);
+    }
+
+    res.json({ success: true, related });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getProductBySlug = async (req, res, next) => {
   try {
     const product = await Product.findOne({ slug: req.params.slug, isActive: true })

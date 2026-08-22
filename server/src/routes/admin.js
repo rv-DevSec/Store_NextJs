@@ -284,6 +284,8 @@ router.post('/master-prices/upload', (req, res, next) => {
 
 router.post('/products/bulk-update-prices', [
   body('percent').isNumeric().withMessage('درصد باید عدد معتبر باشد'),
+  body('productIds').optional().isArray().withMessage('لیست شناسه‌ها باید آرایه باشد'),
+  body('productIds.*').optional().isMongoId().withMessage('شناسه محصول نامعتبر است'),
   validate,
 ], bulkUpdatePrices);
 
