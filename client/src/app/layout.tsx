@@ -16,11 +16,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.png?v=2', type: 'image/png' },
-      { url: '/icon.png?v=2', type: 'image/png', sizes: '256x256' },
+      { url: '/favicon.ico' },
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png', sizes: '256x256' },
     ],
-    apple: [{ url: '/apple-touch-icon.png?v=2', sizes: '180x180', type: 'image/png' }],
-    shortcut: '/favicon.png?v=2',
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.ico',
   },
   manifest: '/site.webmanifest?v=2',
   appleWebApp: {

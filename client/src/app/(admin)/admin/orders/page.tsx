@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { getAdminOrders, updateOrderStatus, adminDeleteOrder } from '@/services/orderService';
@@ -52,10 +52,13 @@ const AdminOrders = () => {
   const orders = data?.orders || [];
   const totalPages = data?.pagination?.pages || 1;
 
-  useEffect(() => {
+  const [prevQueryKey, setPrevQueryKey] = useState<string>('');
+  const currentQueryKey = JSON.stringify(queryKey);
+  if (currentQueryKey !== prevQueryKey) {
+    setPrevQueryKey(currentQueryKey);
     setLocalStatus({});
     setLocalPayment({});
-  }, [data]);
+  }
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status, paymentStatus }: { id: string; status?: string; paymentStatus?: string }) =>

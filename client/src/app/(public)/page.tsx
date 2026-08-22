@@ -53,14 +53,15 @@ const Home = () => {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  useEffect(() => {
+  const [prevIsMobile, setPrevIsMobile] = useState<boolean | null>(null);
+  if (prevIsMobile !== isMobile) {
+    setPrevIsMobile(isMobile);
     if (isMobile && carCount > CARS_PER_PAGE_MOBILE) {
       setCarCount(CARS_PER_PAGE_MOBILE);
-    }
-    if (!isMobile && carCount < CARS_PER_PAGE_DESKTOP) {
+    } else if (!isMobile && carCount < CARS_PER_PAGE_DESKTOP) {
       setCarCount(CARS_PER_PAGE_DESKTOP);
     }
-  }, [isMobile]);
+  }
 
   const { data: settingsData } = useQuery({
     queryKey: ['settings'],
